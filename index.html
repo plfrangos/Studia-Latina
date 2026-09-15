@@ -1,0 +1,2033 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Latin verb tester</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  /* ---------- Marble & Laurel ---------- */
+  :root{
+    --bg:#f5f1e8;
+    --bg-tint-1: rgba(75,94,64,0.10);
+    --bg-tint-2: rgba(176,141,87,0.12);
+    --ink:#2b2620;
+    --ink-soft:#5c5648;
+    --accent:#4b5e40;
+    --accent-2:#a2793f;
+    --panel:#fffdf8;
+    --panel-border:#c9bc9c;
+    --tile-selected-bg:#4b5e40;
+    --tile-selected-text:#fbf7ec;
+    --tab-bg:#e7ecdf;
+    --tab-border:#8ea27c;
+    --tab-active-border:#a2793f;
+    --label-bg:#eef1e6;
+    --label-text:#4b5e40;
+    --wrong-bg:#a3433a;
+    --right-bg:#3f7a4e;
+    --prompt-accent:#a2793f;
+    --pill-bg:#e7ecdf;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);}
+  html{min-height:100%;}
+  body{
+    font-family:"EB Garamond",Garamond,"Cormorant Garamond",Georgia,serif;
+    font-size:18px;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      linear-gradient(rgba(245,241,232,.55), rgba(245,241,232,.55)),
+      url('bg-marble.jpg') center center / cover no-repeat fixed;
+  }
+  #app{max-width:780px;width:100%;margin:0;padding:36px 20px 60px;position:relative;}
+  .header-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  h1.title{
+    font-family:"Cinzel",serif;font-size:27px;margin:0 0 8px 0;font-weight:600;
+    display:inline-block;letter-spacing:.03em;color:var(--ink);
+  }
+  .title-wrap{border-bottom:3px double var(--accent);padding-bottom:10px;flex:1;min-width:200px;}
+  .header-buttons{display:flex;gap:8px;}
+  .chip{
+    display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid var(--panel-border);background:var(--panel);
+    border-radius:3px;padding:8px 14px;font-size:14px;cursor:pointer;color:var(--ink);
+    user-select:none;font-family:"EB Garamond",Georgia,serif;letter-spacing:.04em;
+    font-variant:small-caps;
+  }
+  .chip:hover{filter:brightness(0.97);}
+  .tabbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0 4px;}
+  .tab{
+    border:1px solid var(--tab-border);background:var(--tab-bg);
+    border-radius:3px;padding:8px 14px;font-size:14px;cursor:pointer;color:var(--ink);
+    font-variant:small-caps;letter-spacing:.04em;
+  }
+  .tab.active{border:2px solid var(--tab-active-border);}
+  .score{font-size:16px;margin-left:auto;padding-left:8px;color:var(--ink-soft);}
+  .prompt-text{font-size:21px;margin:22px 0 14px;}
+  .tile-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+  .tile{
+    border:1px solid var(--panel-border);background:var(--panel);color:var(--ink);
+    border-radius:3px;padding:9px 15px;font-size:15px;cursor:pointer;
+    min-width:44px;text-align:center;
+  }
+  .tile.selected{background:var(--tile-selected-bg);color:var(--tile-selected-text);border-color:var(--tile-selected-bg);}
+  .tile.disabled{opacity:.35;cursor:default;}
+  .tile.tiny{padding:5px 9px;font-size:12px;min-width:30px;}
+  table.paradigm{border-collapse:collapse;margin:18px auto;}
+  table.paradigm td{border:1px solid var(--panel-border);padding:8px 14px;font-size:17px;}
+  table.paradigm td.person{background:var(--label-bg);color:var(--label-text);font-weight:600;}
+  table.paradigm td.form{background:var(--panel);}
+  table.paradigm td.form.placeholder{color:var(--prompt-accent);font-weight:600;cursor:pointer;}
+  table.paradigm td.form.clickable:hover{background:var(--bg-tint-2);}
+  table.paradigm td.form.wrong{background:var(--wrong-bg);color:#fbf7ec;}
+  table.paradigm td.form.right{background:var(--right-bg);color:#fbf7ec;}
+  .mark-x{color:#a3433a;font-weight:700;margin-left:6px;}
+  .mark-check{color:#3f7a4e;font-weight:700;margin-left:6px;}
+  .promptbox{
+    border:1px solid var(--panel-border);border-radius:6px;padding:16px;font-size:26px;
+    text-align:center;max-width:420px;margin:12px auto;background:var(--panel);
+  }
+  .qmark{color:var(--prompt-accent);font-weight:700;}
+  .feedback{margin-top:14px;font-size:16px;color:var(--label-text);text-align:center;}
+  .feedback .line{margin:4px 0;}
+  .btn-next{
+    display:block;margin:22px auto 0;border:1px solid var(--tab-border);
+    background:var(--tab-bg);border-radius:3px;padding:10px 26px;font-size:15px;cursor:pointer;
+    font-variant:small-caps;letter-spacing:.04em;
+  }
+  .verb-pill{background:var(--pill-bg);padding:2px 10px;border-radius:3px;font-weight:600;}
+  .type-hint{color:var(--prompt-accent);font-weight:600;margin:2px 0;text-align:center;font-size:18px;}
+  .type-inputs{display:flex;gap:12px;justify-content:center;margin:18px 0;flex-wrap:wrap;}
+  .type-inputs input{
+    border:1px solid var(--panel-border);border-radius:3px;padding:10px 12px;font-size:16px;width:260px;
+    font-family:inherit;background:var(--panel);color:var(--ink);
+  }
+  .type-inputs input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);}
+  .keybox{background:var(--tab-bg);padding:12px 14px;border-radius:4px;margin-top:20px;font-size:14px;}
+  .keybox .row{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;}
+  .note-box{max-width:520px;margin:20px auto;text-align:center;font-style:italic;color:var(--ink-soft);}
+  .results-entry{border-top:1px solid var(--panel-border);padding:14px 0;}
+  .results-entry:first-child{border-top:none;}
+  .results-prompt{color:var(--prompt-accent);font-weight:700;font-size:18px;}
+  .results-line{color:var(--label-text);margin-top:4px;}
+  .setup-label-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:18px 0 10px;}
+  .decor{width:100%;max-width:360px;display:block;margin:0 auto 8px;opacity:.85;}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(20,16,10,.4);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;z-index:50;}
+  .modal{background:var(--panel);border-radius:8px;max-width:600px;width:100%;padding:24px 26px;border:1px solid var(--panel-border);}
+  .modal h2{margin-top:0;font-family:"Cinzel",serif;font-weight:600;font-size:20px;}
+  .modal p{line-height:1.55;font-size:15px;}
+  .modal .close-btn{float:right;}
+  .drill-grid{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0;max-height:320px;overflow:auto;border:1px solid var(--panel-border);padding:10px;border-radius:4px;background:var(--panel);}
+  .drill-tile{border:1px solid var(--panel-border);border-radius:3px;padding:6px 10px;font-size:13px;cursor:pointer;background:var(--panel);color:var(--ink);}
+  .drill-tile.selected{background:var(--tile-selected-bg);color:var(--tile-selected-text);border-color:var(--tile-selected-bg);}
+  .drill-group-label{width:100%;font-weight:700;margin:10px 0 2px;font-size:14px;color:var(--accent);font-variant:small-caps;}
+  .drill-meaning{font-size:21px;text-align:center;margin:20px 0 6px;}
+  .drill-given{text-align:center;font-size:16px;color:var(--ink-soft);margin-bottom:10px;}
+  .drill-given b{color:var(--ink);}
+  .drill-fields{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:18px 0;}
+  .drill-field{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .drill-field label{font-size:12px;color:var(--ink-soft);}
+  .drill-field input{border:1px solid var(--panel-border);border-radius:3px;padding:8px 10px;width:150px;font-size:15px;font-family:inherit;background:var(--panel);color:var(--ink);}
+  .drill-field.right input{border-color:var(--right-bg);}
+  .drill-field.wrong input{border-color:var(--wrong-bg);}
+  .toggle-row{display:flex;gap:14px;align-items:center;justify-content:center;margin:10px 0 18px;font-size:14px;flex-wrap:wrap;}
+  .toggle-opt{display:flex;align-items:center;gap:6px;cursor:pointer;}
+  a.footnote-link{color:var(--label-text);}
+
+  .grid-table{border-collapse:collapse;margin:8px 0 4px;width:100%;}
+  .grid-table th, .grid-table td{border:1px solid var(--panel-border);padding:6px 8px;text-align:center;}
+  .grid-table th{background:var(--label-bg);color:var(--label-text);font-weight:600;font-size:13px;font-variant:small-caps;}
+  .grid-table td.tense-label{background:var(--label-bg);color:var(--label-text);font-weight:600;text-align:left;padding-left:10px;font-variant:small-caps;}
+  .grid-cell{
+    display:inline-block;width:100%;padding:6px 4px;border-radius:3px;cursor:pointer;
+    border:1px solid var(--panel-border);background:var(--panel);font-size:13px;
+  }
+  .grid-cell.on{background:var(--tile-selected-bg);color:var(--tile-selected-text);border-color:var(--tile-selected-bg);}
+  .grid-cell.na{opacity:.25;cursor:default;background:transparent;border-style:dashed;}
+  .grid-wrap{overflow-x:auto;}
+
+  .home-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:24px;}
+  @media (max-width:520px){ .home-grid{grid-template-columns:1fr;} }
+  .home-card{
+    border:1px solid var(--panel-border);background:var(--panel);border-radius:8px;
+    padding:22px 20px;cursor:pointer;text-align:left;transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .home-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(43,38,32,.12);border-color:var(--accent);}
+  .home-card h3{margin:0 0 8px;font-family:"Cinzel",serif;font-size:17px;font-weight:600;color:var(--accent);letter-spacing:.02em;}
+  .home-card p{margin:0;font-size:14.5px;color:var(--ink-soft);line-height:1.45;}
+  .home-intro{font-size:17px;color:var(--ink-soft);margin-top:10px;max-width:560px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ============================== DATA ============================== */
+
+const MACRON_MAP = {'ā':'a','ē':'e','ī':'i','ō':'o','ū':'u','Ā':'A','Ē':'E','Ī':'I','Ō':'O','Ū':'U'};
+function stripMacrons(s){ return s.split('').map(c=>MACRON_MAP[c]||c).join(''); }
+function normalize(s){ return stripMacrons(String(s||'')).toLowerCase().trim().replace(/\s+/g,' '); }
+function matchAnswer(input, variants){
+  const n = normalize(input);
+  if(!n) return false;
+  return variants.some(v=>normalize(v)===n);
+}
+
+const V = s => s.split('/');
+const P6 = (...xs) => xs.map(V);
+
+function mkVerbForms(f){ return f; }
+
+const VERBS = {
+  amo: { key:'amo', label:'amō', conj:1, pp:['amō','amāre','amāvī','amātum'], meaning:'love',
+    forms:{
+      pres:{
+        act:{ indic:P6("amō","amās","amat","amāmus","amātis","amant"),
+              subj:P6("amem","amēs","amet","amēmus","amētis","ament"),
+              imper:{"2sg":V("amā"),"2pl":V("amāte")},
+              infin:V("amāre"), ptcp:V("amāns, amantis") },
+        pass:{ indic:P6("amor","amāris/amāre","amātur","amāmur","amāminī","amantur"),
+               subj:P6("amer","amēris/amēre","amētur","amēmur","amēminī","amentur"),
+               imper:{"2sg":V("amāre"),"2pl":V("amāminī")},
+               infin:V("amārī") } },
+      impf:{
+        act:{ indic:P6("amābam","amābās","amābat","amābāmus","amābātis","amābant"),
+              subj:P6("amārem","amārēs","amāret","amārēmus","amārētis","amārent") },
+        pass:{ indic:P6("amābar","amābāris/amābāre","amābātur","amābāmur","amābāminī","amābantur"),
+               subj:P6("amārer","amārēris/amārēre","amārētur","amārēmur","amārēminī","amārentur") } },
+      fut:{
+        act:{ indic:P6("amābō","amābis","amābit","amābimus","amābitis","amābunt"),
+              imper:{"2sg":V("amātō"),"3sg":V("amātō"),"2pl":V("amātōte"),"3pl":V("amantō")},
+              infin:V("amātūrus esse"), ptcp:V("amātūrus, -a, -um") },
+        pass:{ indic:P6("amābor","amāberis/amābere","amābitur","amābimur","amābiminī","amābuntur"),
+               imper:{"2sg":V("amātor"),"3sg":V("amātor"),"3pl":V("amantor")},
+               infin:V("amātum īrī"), ptcp:V("amandus, -a, -um") } },
+      perf:{
+        act:{ indic:P6("amāvī","amāvistī","amāvit","amāvimus","amāvistis","amāvērunt/amāvēre"),
+              subj:P6("amāverim","amāverīs","amāverit","amāverīmus","amāverītis","amāverint"),
+              infin:V("amāvisse") },
+        pass:{ indic:P6("amātus sum","amātus es","amātus est","amātī sumus","amātī estis","amātī sunt"),
+               subj:P6("amātus sim","amātus sīs","amātus sit","amātī sīmus","amātī sītis","amātī sint"),
+               infin:V("amātus esse"), ptcp:V("amātus, -a, -um") } },
+      plup:{
+        act:{ indic:P6("amāveram","amāverās","amāverat","amāverāmus","amāverātis","amāverant"),
+              subj:P6("amāvissem","amāvissēs","amāvisset","amāvissēmus","amāvissētis","amāvissent") },
+        pass:{ indic:P6("amātus eram","amātus erās","amātus erat","amātī erāmus","amātī erātis","amātī erant"),
+               subj:P6("amātus essem","amātus essēs","amātus esset","amātī essēmus","amātī essētis","amātī essent") } },
+      futperf:{
+        act:{ indic:P6("amāverō","amāveris","amāverit","amāverimus","amāveritis","amāverint") },
+        pass:{ indic:P6("amātus erō","amātus eris","amātus erit","amātī erimus","amātī eritis","amātī erunt") } }
+    }
+  },
+  moneo: { key:'moneo', label:'moneō', conj:2, pp:['moneō','monēre','monuī','monitum'], meaning:'warn, advise',
+    forms:{
+      pres:{
+        act:{ indic:P6("moneō","monēs","monet","monēmus","monētis","monent"),
+              subj:P6("moneam","moneās","moneat","moneāmus","moneātis","moneant"),
+              imper:{"2sg":V("monē"),"2pl":V("monēte")},
+              infin:V("monēre"), ptcp:V("monēns, monentis") },
+        pass:{ indic:P6("moneor","monēris/monēre","monētur","monēmur","monēminī","monentur"),
+               subj:P6("monear","moneāris/moneāre","moneātur","moneāmur","moneāminī","moneantur"),
+               imper:{"2sg":V("monēre"),"2pl":V("monēminī")},
+               infin:V("monērī") } },
+      impf:{
+        act:{ indic:P6("monēbam","monēbās","monēbat","monēbāmus","monēbātis","monēbant"),
+              subj:P6("monērem","monērēs","monēret","monērēmus","monērētis","monērent") },
+        pass:{ indic:P6("monēbar","monēbāris/monēbāre","monēbātur","monēbāmur","monēbāminī","monēbantur"),
+               subj:P6("monērer","monērēris/monērēre","monērētur","monērēmur","monērēminī","monērentur") } },
+      fut:{
+        act:{ indic:P6("monēbō","monēbis","monēbit","monēbimus","monēbitis","monēbunt"),
+              imper:{"2sg":V("monētō"),"3sg":V("monētō"),"2pl":V("monētōte"),"3pl":V("monentō")},
+              infin:V("monitūrus esse"), ptcp:V("monitūrus, -a, -um") },
+        pass:{ indic:P6("monēbor","monēberis/monēbere","monēbitur","monēbimur","monēbiminī","monēbuntur"),
+               imper:{"2sg":V("monētor"),"3sg":V("monētor"),"3pl":V("monentor")},
+               infin:V("monitum īrī"), ptcp:V("monendus, -a, -um") } },
+      perf:{
+        act:{ indic:P6("monuī","monuistī","monuit","monuimus","monuistis","monuērunt/monuēre"),
+              subj:P6("monuerim","monuerīs","monuerit","monuerīmus","monuerītis","monuerint"),
+              infin:V("monuisse") },
+        pass:{ indic:P6("monitus sum","monitus es","monitus est","monitī sumus","monitī estis","monitī sunt"),
+               subj:P6("monitus sim","monitus sīs","monitus sit","monitī sīmus","monitī sītis","monitī sint"),
+               infin:V("monitus esse"), ptcp:V("monitus, -a, -um") } },
+      plup:{
+        act:{ indic:P6("monueram","monuerās","monuerat","monuerāmus","monuerātis","monuerant"),
+              subj:P6("monuissem","monuissēs","monuisset","monuissēmus","monuissētis","monuissent") },
+        pass:{ indic:P6("monitus eram","monitus erās","monitus erat","monitī erāmus","monitī erātis","monitī erant"),
+               subj:P6("monitus essem","monitus essēs","monitus esset","monitī essēmus","monitī essētis","monitī essent") } },
+      futperf:{
+        act:{ indic:P6("monuerō","monueris","monuerit","monuerimus","monueritis","monuerint") },
+        pass:{ indic:P6("monitus erō","monitus eris","monitus erit","monitī erimus","monitī eritis","monitī erunt") } }
+    }
+  },
+  mitto: { key:'mitto', label:'mittō', conj:3, pp:['mittō','mittere','mīsī','missum'], meaning:'send',
+    forms:{
+      pres:{
+        act:{ indic:P6("mittō","mittis","mittit","mittimus","mittitis","mittunt"),
+              subj:P6("mittam","mittās","mittat","mittāmus","mittātis","mittant"),
+              imper:{"2sg":V("mitte"),"2pl":V("mittite")},
+              infin:V("mittere"), ptcp:V("mittēns, mittentis") },
+        pass:{ indic:P6("mittor","mitteris/mittere","mittitur","mittimur","mittiminī","mittuntur"),
+               subj:P6("mittar","mittāris/mittāre","mittātur","mittāmur","mittāminī","mittantur"),
+               imper:{"2sg":V("mittere"),"2pl":V("mittiminī")},
+               infin:V("mittī") } },
+      impf:{
+        act:{ indic:P6("mittēbam","mittēbās","mittēbat","mittēbāmus","mittēbātis","mittēbant"),
+              subj:P6("mitterem","mitterēs","mitteret","mitterēmus","mitterētis","mitterent") },
+        pass:{ indic:P6("mittēbar","mittēbāris/mittēbāre","mittēbātur","mittēbāmur","mittēbāminī","mittēbantur"),
+               subj:P6("mitterer","mitterēris/mitterēre","mitterētur","mitterēmur","mitterēminī","mitterentur") } },
+      fut:{
+        act:{ indic:P6("mittam","mittēs","mittet","mittēmus","mittētis","mittent"),
+              imper:{"2sg":V("mittitō"),"3sg":V("mittitō"),"2pl":V("mittitōte"),"3pl":V("mittuntō")},
+              infin:V("missūrus esse"), ptcp:V("missūrus, -a, -um") },
+        pass:{ indic:P6("mittar","mittēris/mittēre","mittētur","mittēmur","mittēminī","mittentur"),
+               imper:{"2sg":V("mittitor"),"3sg":V("mittitor"),"3pl":V("mittuntor")},
+               infin:V("missum īrī"), ptcp:V("mittendus, -a, -um") } },
+      perf:{
+        act:{ indic:P6("mīsī","mīsistī","mīsit","mīsimus","mīsistis","mīsērunt/mīsēre"),
+              subj:P6("mīserim","mīserīs","mīserit","mīserīmus","mīserītis","mīserint"),
+              infin:V("mīsisse") },
+        pass:{ indic:P6("missus sum","missus es","missus est","missī sumus","missī estis","missī sunt"),
+               subj:P6("missus sim","missus sīs","missus sit","missī sīmus","missī sītis","missī sint"),
+               infin:V("missus esse"), ptcp:V("missus, -a, -um") } },
+      plup:{
+        act:{ indic:P6("mīseram","mīserās","mīserat","mīserāmus","mīserātis","mīserant"),
+              subj:P6("mīsissem","mīsissēs","mīsisset","mīsissēmus","mīsissētis","mīsissent") },
+        pass:{ indic:P6("missus eram","missus erās","missus erat","missī erāmus","missī erātis","missī erant"),
+               subj:P6("missus essem","missus essēs","missus esset","missī essēmus","missī essētis","missī essent") } },
+      futperf:{
+        act:{ indic:P6("mīserō","mīseris","mīserit","mīserimus","mīseritis","mīserint") },
+        pass:{ indic:P6("missus erō","missus eris","missus erit","missī erimus","missī eritis","missī erunt") } }
+    }
+  },
+  audio: { key:'audio', label:'audiō', conj:4, pp:['audiō','audīre','audīvī','audītum'], meaning:'hear',
+    forms:{
+      pres:{
+        act:{ indic:P6("audiō","audīs","audit","audīmus","audītis","audiunt"),
+              subj:P6("audiam","audiās","audiat","audiāmus","audiātis","audiant"),
+              imper:{"2sg":V("audī"),"2pl":V("audīte")},
+              infin:V("audīre"), ptcp:V("audiēns, audientis") },
+        pass:{ indic:P6("audior","audīris/audīre","audītur","audīmur","audīminī","audiuntur"),
+               subj:P6("audiar","audiāris/audiāre","audiātur","audiāmur","audiāminī","audiantur"),
+               imper:{"2sg":V("audīre"),"2pl":V("audīminī")},
+               infin:V("audīrī") } },
+      impf:{
+        act:{ indic:P6("audiēbam","audiēbās","audiēbat","audiēbāmus","audiēbātis","audiēbant"),
+              subj:P6("audīrem","audīrēs","audīret","audīrēmus","audīrētis","audīrent") },
+        pass:{ indic:P6("audiēbar","audiēbāris/audiēbāre","audiēbātur","audiēbāmur","audiēbāminī","audiēbantur"),
+               subj:P6("audīrer","audīrēris/audīrēre","audīrētur","audīrēmur","audīrēminī","audīrentur") } },
+      fut:{
+        act:{ indic:P6("audiam","audiēs","audiet","audiēmus","audiētis","audient"),
+              imper:{"2sg":V("audītō"),"3sg":V("audītō"),"2pl":V("audītōte"),"3pl":V("audiuntō")},
+              infin:V("audītūrus esse"), ptcp:V("audītūrus, -a, -um") },
+        pass:{ indic:P6("audiar","audiēris/audiēre","audiētur","audiēmur","audiēminī","audientur"),
+               imper:{"2sg":V("audītor"),"3sg":V("audītor"),"3pl":V("audiuntor")},
+               infin:V("audītum īrī"), ptcp:V("audiendus, -a, -um") } },
+      perf:{
+        act:{ indic:P6("audīvī","audīvistī","audīvit","audīvimus","audīvistis","audīvērunt/audīvēre"),
+              subj:P6("audīverim","audīverīs","audīverit","audīverīmus","audīverītis","audīverint"),
+              infin:V("audīvisse") },
+        pass:{ indic:P6("audītus sum","audītus es","audītus est","audītī sumus","audītī estis","audītī sunt"),
+               subj:P6("audītus sim","audītus sīs","audītus sit","audītī sīmus","audītī sītis","audītī sint"),
+               infin:V("audītus esse"), ptcp:V("audītus, -a, -um") } },
+      plup:{
+        act:{ indic:P6("audīveram","audīverās","audīverat","audīverāmus","audīverātis","audīverant"),
+              subj:P6("audīvissem","audīvissēs","audīvisset","audīvissēmus","audīvissētis","audīvissent") },
+        pass:{ indic:P6("audītus eram","audītus erās","audītus erat","audītī erāmus","audītī erātis","audītī erant"),
+               subj:P6("audītus essem","audītus essēs","audītus esset","audītī essēmus","audītī essētis","audītī essent") } },
+      futperf:{
+        act:{ indic:P6("audīverō","audīveris","audīverit","audīverimus","audīveritis","audīverint") },
+        pass:{ indic:P6("audītus erō","audītus eris","audītus erit","audītī erimus","audītī eritis","audītī erunt") } }
+    }
+  },
+  fugio: { key:'fugio', label:'fugiō', conj:'3io', pp:['fugiō','fugere','fūgī','fugitum'], meaning:'flee',
+    forms:{
+      pres:{
+        act:{ indic:P6("fugiō","fugis","fugit","fugimus","fugitis","fugiunt"),
+              subj:P6("fugiam","fugiās","fugiat","fugiāmus","fugiātis","fugiant"),
+              imper:{"2sg":V("fuge"),"2pl":V("fugite")},
+              infin:V("fugere"), ptcp:V("fugiēns, fugientis") },
+        pass:{ indic:P6("fugior","fugeris/fugere","fugitur","fugimur","fugiminī","fugiuntur"),
+               subj:P6("fugiar","fugiāris/fugiāre","fugiātur","fugiāmur","fugiāminī","fugiantur"),
+               imper:{"2sg":V("fugere"),"2pl":V("fugiminī")},
+               infin:V("fugī") } },
+      impf:{
+        act:{ indic:P6("fugiēbam","fugiēbās","fugiēbat","fugiēbāmus","fugiēbātis","fugiēbant"),
+              subj:P6("fugerem","fugerēs","fugeret","fugerēmus","fugerētis","fugerent") },
+        pass:{ indic:P6("fugiēbar","fugiēbāris/fugiēbāre","fugiēbātur","fugiēbāmur","fugiēbāminī","fugiēbantur"),
+               subj:P6("fugerer","fugerēris/fugerēre","fugerētur","fugerēmur","fugerēminī","fugerentur") } },
+      fut:{
+        act:{ indic:P6("fugiam","fugiēs","fugiet","fugiēmus","fugiētis","fugient"),
+              imper:{"2sg":V("fugitō"),"3sg":V("fugitō"),"2pl":V("fugitōte"),"3pl":V("fugiuntō")},
+              infin:V("fugitūrus esse"), ptcp:V("fugitūrus, -a, -um") },
+        pass:{ indic:P6("fugiar","fugiēris/fugiēre","fugiētur","fugiēmur","fugiēminī","fugientur"),
+               imper:{"2sg":V("fugitor"),"3sg":V("fugitor"),"3pl":V("fugiuntor")},
+               infin:V("fugitum īrī"), ptcp:V("fugiendus, -a, -um") } },
+      perf:{
+        act:{ indic:P6("fūgī","fūgistī","fūgit","fūgimus","fūgistis","fūgērunt/fūgēre"),
+              subj:P6("fūgerim","fūgerīs","fūgerit","fūgerīmus","fūgerītis","fūgerint"),
+              infin:V("fūgisse") },
+        pass:{ indic:P6("fugitus sum","fugitus es","fugitus est","fugitī sumus","fugitī estis","fugitī sunt"),
+               subj:P6("fugitus sim","fugitus sīs","fugitus sit","fugitī sīmus","fugitī sītis","fugitī sint"),
+               infin:V("fugitus esse"), ptcp:V("fugitus, -a, -um") } },
+      plup:{
+        act:{ indic:P6("fūgeram","fūgerās","fūgerat","fūgerāmus","fūgerātis","fūgerant"),
+              subj:P6("fūgissem","fūgissēs","fūgisset","fūgissēmus","fūgissētis","fūgissent") },
+        pass:{ indic:P6("fugitus eram","fugitus erās","fugitus erat","fugitī erāmus","fugitī erātis","fugitī erant"),
+               subj:P6("fugitus essem","fugitus essēs","fugitus esset","fugitī essēmus","fugitī essētis","fugitī essent") } },
+      futperf:{
+        act:{ indic:P6("fūgerō","fūgeris","fūgerit","fūgerimus","fūgeritis","fūgerint") },
+        pass:{ indic:P6("fugitus erō","fugitus eris","fugitus erit","fugitī erimus","fugitī eritis","fugitī erunt") } }
+    }
+  },
+  sum: { key:'sum', label:'sum', conj:'irr', pp:['sum','esse','fuī','futūrus'], meaning:'be',
+    forms:{
+      pres:{ act:{ indic:P6("sum","es","est","sumus","estis","sunt"),
+                   subj:P6("sim","sīs","sit","sīmus","sītis","sint"),
+                   imper:{"2sg":V("es"),"2pl":V("este")},
+                   infin:V("esse") } },
+      impf:{ act:{ indic:P6("eram","erās","erat","erāmus","erātis","erant"),
+                   subj:P6("essem","essēs","esset","essēmus","essētis","essent") } },
+      fut:{ act:{ indic:P6("erō","eris","erit","erimus","eritis","erunt"),
+                  imper:{"2sg":V("estō"),"3sg":V("estō"),"2pl":V("estōte"),"3pl":V("suntō")},
+                  infin:V("futūrus esse/fore"), ptcp:V("futūrus, -a, -um") } },
+      perf:{ act:{ indic:P6("fuī","fuistī","fuit","fuimus","fuistis","fuērunt/fuēre"),
+                   subj:P6("fuerim","fuerīs","fuerit","fuerīmus","fuerītis","fuerint"),
+                   infin:V("fuisse") } },
+      plup:{ act:{ indic:P6("fueram","fuerās","fuerat","fuerāmus","fuerātis","fuerant"),
+                   subj:P6("fuissem","fuissēs","fuisset","fuissēmus","fuissētis","fuissent") } },
+      futperf:{ act:{ indic:P6("fuerō","fueris","fuerit","fuerimus","fueritis","fuerint") } }
+    }
+  }
+};
+const VERB_ORDER = ['amo','moneo','mitto','audio','fugio','sum'];
+
+const TENSE_TILES = ['pres','fut','impf','perf','plup','futperf'];
+const VOICES = ['act','pass'];
+const MOODS = ['indic','subj','imper','infin','ptcp'];
+
+const TENSE_LABEL = {pres:'pres',fut:'fut',impf:'impf',perf:'perf',plup:'plup',futperf:'futperf'};
+const TENSE_FULL = {pres:'present',fut:'future',impf:'imperfect',perf:'perfect',plup:'pluperfect',futperf:'future perfect'};
+const VOICE_LABEL = {act:'act',pass:'pass'};
+const VOICE_FULL = {act:'active',pass:'passive'};
+const MOOD_LABEL = {indic:'indic',subj:'subj',imper:'imper',infin:'infin',ptcp:'ptcp'};
+const MOOD_FULL = {indic:'indicative',subj:'subjunctive',imper:'imperative',infin:'infinitive',ptcp:'participle'};
+
+const PERSON_LABELS = ['1st s','2nd s','3rd s','1st p','2nd p','3rd p'];
+const PERSON_FULL = ['1st person singular','2nd person singular','3rd person singular','1st person plural','2nd person plural','3rd person plural'];
+const IMPER_SLOT_LABEL = {'2sg':'2nd s','3sg':'3rd s','2pl':'2nd p','3pl':'3rd p'};
+const IMPER_SLOT_FULL = {'2sg':'2nd person singular','3sg':'3rd person singular','2pl':'2nd person plural','3pl':'3rd person plural'};
+
+/* base gap table, verb-independent (used to build PARSE grid & REVIEW structure) */
+function cellExistsBase(mood,tense,voice){
+  if(mood==='indic') return true; // all 6 tenses x both voices
+  if(mood==='subj') return ['pres','impf','perf','plup'].includes(tense);
+  if(mood==='imper') return ['pres','fut'].includes(tense);
+  if(mood==='infin') return ['pres','perf','fut'].includes(tense);
+  if(mood==='ptcp'){
+    if(tense==='pres') return voice==='act';
+    if(tense==='fut') return true;
+    if(tense==='perf') return voice==='pass';
+    return false;
+  }
+  return false;
+}
+/* verb-specific gap table (adds sum's restrictions) */
+function cellExists(verbKey,mood,tense,voice){
+  if(!cellExistsBase(mood,tense,voice)) return false;
+  if(verbKey==='sum'){
+    if(voice==='pass') return false;
+    if(mood==='ptcp' && tense==='pres') return false;
+  }
+  return true;
+}
+
+function imperSlots(tense,voice){
+  if(tense==='pres') return ['2sg','2pl'];
+  if(tense==='fut') return voice==='act' ? ['2sg','3sg','2pl','3pl'] : ['2sg','3sg','3pl'];
+  return [];
+}
+
+function getCell(verbKey,tense,voice,mood){
+  const f = VERBS[verbKey].forms;
+  if(!f[tense] || !f[tense][voice]) return undefined;
+  return f[tense][voice][mood];
+}
+
+/* ============================== DRILL DATA (100 verbs) ============================== */
+
+function d(id,group,p1,p2,p3,p4,meaning,defective){
+  return {id, group, parts:[p1,p2,p3,p4], meaning, defective: !!defective};
+}
+
+const DRILL_VERBS = [
+  // 1st conjugation
+  d(1,'1st conjugation','amō','amāre','amāvī','amātum','love'),
+  d(2,'1st conjugation','parō','parāre','parāvī','parātum','prepare'),
+  d(3,'1st conjugation','vocō','vocāre','vocāvī','vocātum','call'),
+  d(4,'1st conjugation','putō','putāre','putāvī','putātum','think'),
+  d(5,'1st conjugation','dō','dare','dedī','datum','give'),
+  d(6,'1st conjugation','stō','stāre','stetī','statum','stand'),
+  d(7,'1st conjugation','laudō','laudāre','laudāvī','laudātum','praise'),
+  d(8,'1st conjugation','servō','servāre','servāvī','servātum','save, keep'),
+  d(9,'1st conjugation','spectō','spectāre','spectāvī','spectātum','watch'),
+  d(10,'1st conjugation','nūntiō','nūntiāre','nūntiāvī','nūntiātum','announce'),
+  d(11,'1st conjugation','cōgitō','cōgitāre','cōgitāvī','cōgitātum','think, plan'),
+  d(12,'1st conjugation','cūrō','cūrāre','cūrāvī','cūrātum','care for'),
+  d(13,'1st conjugation','mūtō','mūtāre','mūtāvī','mūtātum','change'),
+  d(14,'1st conjugation','negō','negāre','negāvī','negātum','deny'),
+  d(15,'1st conjugation','optō','optāre','optāvī','optātum','wish for'),
+  d(16,'1st conjugation','adiuvō','adiuvāre','adiūvī','adiūtum','help'),
+  d(17,'1st conjugation','dōnō','dōnāre','dōnāvī','dōnātum','give, present'),
+  d(18,'1st conjugation','creō','creāre','creāvī','creātum','create'),
+  d(19,'1st conjugation','probō','probāre','probāvī','probātum','approve, prove'),
+  d(20,'1st conjugation','narrō','narrāre','narrāvī','narrātum','tell, relate'),
+  d(21,'1st conjugation','appellō','appellāre','appellāvī','appellātum','call, name'),
+  d(22,'1st conjugation','vītō','vītāre','vītāvī','vītātum','avoid'),
+  d(23,'1st conjugation','ōrō','ōrāre','ōrāvī','ōrātum','speak, beg, pray'),
+  d(24,'1st conjugation','celebrō','celebrāre','celebrāvī','celebrātum','celebrate'),
+  d(25,'1st conjugation','exīstimō','exīstimāre','exīstimāvī','exīstimātum','think, judge'),
+  // 2nd conjugation
+  d(26,'2nd conjugation','moneō','monēre','monuī','monitum','warn, advise'),
+  d(27,'2nd conjugation','videō','vidēre','vīdī','vīsum','see'),
+  d(28,'2nd conjugation','habeō','habēre','habuī','habitum','have, hold'),
+  d(29,'2nd conjugation','teneō','tenēre','tenuī','tentum','hold'),
+  d(30,'2nd conjugation','dēbeō','dēbēre','dēbuī','dēbitum','owe, ought'),
+  d(31,'2nd conjugation','iubeō','iubēre','iussī','iussum','order'),
+  d(32,'2nd conjugation','maneō','manēre','mānsī','mānsum','remain'),
+  d(33,'2nd conjugation','moveō','movēre','mōvī','mōtum','move'),
+  d(34,'2nd conjugation','doceō','docēre','docuī','doctum','teach'),
+  d(35,'2nd conjugation','respondeō','respondēre','respondī','respōnsum','answer'),
+  d(36,'2nd conjugation','timeō','timēre','timuī',null,'fear'),
+  d(37,'2nd conjugation','sedeō','sedēre','sēdī','sessum','sit'),
+  d(38,'2nd conjugation','iaceō','iacēre','iacuī',null,'lie (be lying)'),
+  d(39,'2nd conjugation','augeō','augēre','auxī','auctum','increase'),
+  d(40,'2nd conjugation','rīdeō','rīdēre','rīsī','rīsum','laugh'),
+  d(41,'2nd conjugation','suādeō','suādēre','suāsī','suāsum','urge, advise'),
+  d(42,'2nd conjugation','caveō','cavēre','cāvī','cautum','beware'),
+  d(43,'2nd conjugation','gaudeō','gaudēre','gāvīsus sum',null,'rejoice (semi-deponent)'),
+  d(44,'2nd conjugation','pāreō','pārēre','pāruī',null,'obey'),
+  d(45,'2nd conjugation','terreō','terrēre','terruī','territum','frighten'),
+  d(46,'2nd conjugation','misceō','miscēre','miscuī','mixtum','mix'),
+  d(47,'2nd conjugation','dēleō','dēlēre','dēlēvī','dēlētum','destroy'),
+  d(48,'2nd conjugation','impleō','implēre','implēvī','implētum','fill'),
+  d(49,'2nd conjugation','careō','carēre','caruī',null,'lack, be without'),
+  d(50,'2nd conjugation','studeō','studēre','studuī',null,'be eager for'),
+  // 3rd conjugation
+  d(51,'3rd conjugation','agō','agere','ēgī','āctum','do, drive'),
+  d(52,'3rd conjugation','dīcō','dīcere','dīxī','dictum','say'),
+  d(53,'3rd conjugation','dūcō','dūcere','dūxī','ductum','lead'),
+  d(54,'3rd conjugation','mittō','mittere','mīsī','missum','send'),
+  d(55,'3rd conjugation','pōnō','pōnere','posuī','positum','put, place'),
+  d(56,'3rd conjugation','scrībō','scrībere','scrīpsī','scrīptum','write'),
+  d(57,'3rd conjugation','currō','currere','cucurrī','cursum','run'),
+  d(58,'3rd conjugation','crēdō','crēdere','crēdidī','crēditum','believe'),
+  d(59,'3rd conjugation','discō','discere','didicī',null,'learn'),
+  d(60,'3rd conjugation','petō','petere','petīvī','petītum','seek, ask'),
+  d(61,'3rd conjugation','vincō','vincere','vīcī','victum','conquer'),
+  d(62,'3rd conjugation','relinquō','relinquere','relīquī','relictum','leave, abandon'),
+  d(63,'3rd conjugation','gerō','gerere','gessī','gestum','carry, wage'),
+  d(64,'3rd conjugation','cadō','cadere','cecidī','cāsum','fall'),
+  d(65,'3rd conjugation','cēdō','cēdere','cessī','cessum','yield, go'),
+  d(66,'3rd conjugation','legō','legere','lēgī','lēctum','read, gather'),
+  d(67,'3rd conjugation','regō','regere','rēxī','rēctum','rule'),
+  d(68,'3rd conjugation','trahō','trahere','trāxī','tractum','drag'),
+  d(69,'3rd conjugation','vertō','vertere','vertī','versum','turn'),
+  d(70,'3rd conjugation','cognōscō','cognōscere','cognōvī','cognitum','learn, recognize'),
+  // 3rd -io
+  d(71,'3rd conjugation, -iō','capiō','capere','cēpī','captum','seize, take'),
+  d(72,'3rd conjugation, -iō','faciō','facere','fēcī','factum','do, make'),
+  d(73,'3rd conjugation, -iō','fugiō','fugere','fūgī','fugitum','flee'),
+  d(74,'3rd conjugation, -iō','iaciō','iacere','iēcī','iactum','throw'),
+  d(75,'3rd conjugation, -iō','accipiō','accipere','accēpī','acceptum','receive'),
+  d(76,'3rd conjugation, -iō','cōnficiō','cōnficere','cōnfēcī','cōnfectum','complete'),
+  d(77,'3rd conjugation, -iō','incipiō','incipere','incēpī','inceptum','begin'),
+  d(78,'3rd conjugation, -iō','aspiciō','aspicere','aspēxī','aspectum','look at'),
+  // 4th conjugation
+  d(79,'4th conjugation','audiō','audīre','audīvī','audītum','hear'),
+  d(80,'4th conjugation','veniō','venīre','vēnī','ventum','come'),
+  d(81,'4th conjugation','sentiō','sentīre','sēnsī','sēnsum','feel, perceive'),
+  d(82,'4th conjugation','inveniō','invenīre','invēnī','inventum','find'),
+  d(83,'4th conjugation','dormiō','dormīre','dormīvī','dormītum','sleep'),
+  d(84,'4th conjugation','sciō','scīre','scīvī','scītum','know'),
+  d(85,'4th conjugation','reperiō','reperīre','repperī','repertum','find, discover'),
+  d(86,'4th conjugation','aperiō','aperīre','aperuī','apertum','open'),
+  d(87,'4th conjugation','serviō','servīre','servīvī','servītum','serve'),
+  d(88,'4th conjugation','pūniō','pūnīre','pūnīvī','pūnītum','punish'),
+  // Irregular / defective
+  d(89,'Irregular / defective','sum','esse','fuī','futūrus','be'),
+  d(90,'Irregular / defective','possum','posse','potuī',null,'be able'),
+  d(91,'Irregular / defective','ferō','ferre','tulī','lātum','carry, bear'),
+  d(92,'Irregular / defective','eō','īre',['iī','īvī'],'itum','go'),
+  d(93,'Irregular / defective','volō','velle','voluī',null,'wish'),
+  d(94,'Irregular / defective','nōlō','nōlle','nōluī',null,'be unwilling'),
+  d(95,'Irregular / defective','mālō','mālle','māluī',null,'prefer'),
+  d(96,'Irregular / defective','fīō','fierī','factus sum',null,'become, be made'),
+  { id:97, group:'Irregular / defective', parts:['inquam','inquis, inquit',null,null], meaning:'say (used with direct quotes)', defective:true },
+  d(98,'Irregular / defective','edō',['edere','ēsse'],'ēdī','ēsum','eat'),
+  { id:99, group:'Irregular / defective', parts:['coepī','coepisse',null,'coeptum'], meaning:'began (perfect system only)', defective:true },
+  { id:100, group:'Irregular / defective', parts:['meminī','meminisse',null,null], meaning:'remember (perfect system, present meaning)', defective:true }
+];
+
+/* ============================== NOUN DATA ============================== */
+
+const CASES = ['nom','gen','dat','acc','abl','voc'];
+const CASE_LABEL = {nom:'nom',gen:'gen',dat:'dat',acc:'acc',abl:'abl',voc:'voc'};
+const CASE_FULL = {nom:'nominative',gen:'genitive',dat:'dative',acc:'accusative',abl:'ablative',voc:'vocative'};
+const NUMBERS = ['sg','pl'];
+const NUMBER_LABEL = {sg:'sg',pl:'pl'};
+const NUMBER_FULL = {sg:'singular',pl:'plural'};
+const GENDER_LABEL = {m:'m',f:'f',n:'n'};
+const GENDER_FULL = {m:'masculine',f:'feminine',n:'neuter'};
+
+function n6(nomSg,genSg,datSg,accSg,ablSg,vocSg, nomPl,genPl,datPl,accPl,ablPl,vocPl){
+  return {
+    sg:{nom:V(nomSg),gen:V(genSg),dat:V(datSg),acc:V(accSg),abl:V(ablSg),voc:V(vocSg)},
+    pl:{nom:V(nomPl),gen:V(genPl),dat:V(datPl),acc:V(accPl),abl:V(ablPl),voc:V(vocPl)}
+  };
+}
+
+const NOUNS = {
+  puella: { key:'puella', label:'puella', gen:'puellae', declension:1, genders:['f'], meaning:'girl', irregular:false,
+    forms: n6('puella','puellae','puellae','puellam','puellā','puella', 'puellae','puellārum','puellīs','puellās','puellīs','puellae') },
+  dominus: { key:'dominus', label:'dominus', gen:'dominī', declension:2, genders:['m'], meaning:'lord, master', irregular:false,
+    forms: n6('dominus','dominī','dominō','dominum','dominō','domine', 'dominī','dominōrum','dominīs','dominōs','dominīs','dominī') },
+  bellum: { key:'bellum', label:'bellum', gen:'bellī', declension:2, genders:['n'], meaning:'war', irregular:false,
+    forms: n6('bellum','bellī','bellō','bellum','bellō','bellum', 'bella','bellōrum','bellīs','bella','bellīs','bella') },
+  puer: { key:'puer', label:'puer', gen:'puerī', declension:2, genders:['m'], meaning:'boy', irregular:false,
+    forms: n6('puer','puerī','puerō','puerum','puerō','puer', 'puerī','puerōrum','puerīs','puerōs','puerīs','puerī') },
+  rex: { key:'rex', label:'rēx', gen:'rēgis', declension:3, genders:['m'], meaning:'king', irregular:false,
+    forms: n6('rēx','rēgis','rēgī','rēgem','rēge','rēx', 'rēgēs','rēgum','rēgibus','rēgēs','rēgibus','rēgēs') },
+  corpus: { key:'corpus', label:'corpus', gen:'corporis', declension:3, genders:['n'], meaning:'body', irregular:false,
+    forms: n6('corpus','corporis','corporī','corpus','corpore','corpus', 'corpora','corporum','corporibus','corpora','corporibus','corpora') },
+  manus: { key:'manus', label:'manus', gen:'manūs', declension:4, genders:['f'], meaning:'hand', irregular:false,
+    forms: n6('manus','manūs','manuī','manum','manū','manus', 'manūs','manuum','manibus','manūs','manibus','manūs') },
+  dies: { key:'dies', label:'diēs', gen:'diēī', declension:5, genders:['m'], meaning:'day', irregular:false,
+    forms: n6('diēs','diēī','diēī','diem','diē','diēs', 'diēs','diērum','diēbus','diēs','diēbus','diēs') },
+  vis: { key:'vis', label:'vīs', gen:'vīs', declension:3, genders:['f'], meaning:'force, strength', irregular:true,
+    forms: n6('vīs','vīs','vī','vim','vī','vīs', 'vīrēs','vīrium','vīribus','vīrēs/vīrīs','vīribus','vīrēs') },
+  deus: { key:'deus', label:'deus', gen:'deī', declension:2, genders:['m'], meaning:'god', irregular:true,
+    forms: n6('deus','deī','deō','deum','deō','deus', 'dī/deī','deōrum','dīs/deīs','deōs','dīs/deīs','dī/deī') },
+  bos: { key:'bos', label:'bōs', gen:'bovis', declension:3, genders:['m','f'], meaning:'ox, cow', irregular:true,
+    forms: n6('bōs','bovis','bovī','bovem','bove','bōs', 'bovēs','boum','bōbus/būbus','bovēs','bōbus/būbus','bovēs') }
+};
+const NOUN_ORDER = ['puella','dominus','bellum','puer','rex','corpus','manus','dies','vis','deus','bos'];
+
+function getNounCell(nounKey,cs,num){ return NOUNS[nounKey].forms[num][cs]; }
+
+/* ============================== VOCAB DATA ============================== */
+
+function vw(latin, pos, meanings, category){
+  return { latin, pos, meanings: Array.isArray(meanings)?meanings:[meanings], category };
+}
+
+const VOCAB = [
+  // Nouns
+  vw('puella, -ae f.','noun',['girl'],'nouns'),
+  vw('agricola, -ae m.','noun',['farmer'],'nouns'),
+  vw('aqua, -ae f.','noun',['water'],'nouns'),
+  vw('terra, -ae f.','noun',['land','earth'],'nouns'),
+  vw('via, -ae f.','noun',['road','way'],'nouns'),
+  vw('vīta, -ae f.','noun',['life'],'nouns'),
+  vw('fīlia, -ae f.','noun',['daughter'],'nouns'),
+  vw('patria, -ae f.','noun',['fatherland','homeland'],'nouns'),
+  vw('pecūnia, -ae f.','noun',['money'],'nouns'),
+  vw('fortūna, -ae f.','noun',['fortune','luck'],'nouns'),
+  vw('dominus, -ī m.','noun',['lord','master'],'nouns'),
+  vw('servus, -ī m.','noun',['slave'],'nouns'),
+  vw('fīlius, -ī m.','noun',['son'],'nouns'),
+  vw('amīcus, -ī m.','noun',['friend'],'nouns'),
+  vw('populus, -ī m.','noun',['people'],'nouns'),
+  vw('deus, -ī m.','noun',['god'],'nouns'),
+  vw('equus, -ī m.','noun',['horse'],'nouns'),
+  vw('bellum, -ī n.','noun',['war'],'nouns'),
+  vw('verbum, -ī n.','noun',['word'],'nouns'),
+  vw('perīculum, -ī n.','noun',['danger'],'nouns'),
+  vw('rēx, rēgis m.','noun',['king'],'nouns'),
+  vw('homō, hominis m.','noun',['man','human being'],'nouns'),
+  vw('mīles, mīlitis m.','noun',['soldier'],'nouns'),
+  vw('pater, patris m.','noun',['father'],'nouns'),
+  vw('māter, mātris f.','noun',['mother'],'nouns'),
+  vw('frāter, frātris m.','noun',['brother'],'nouns'),
+  vw('soror, sorōris f.','noun',['sister'],'nouns'),
+  vw('cīvitās, cīvitātis f.','noun',['state','citizenship'],'nouns'),
+  vw('urbs, urbis f.','noun',['city'],'nouns'),
+  vw('corpus, corporis n.','noun',['body'],'nouns'),
+  vw('tempus, temporis n.','noun',['time'],'nouns'),
+  vw('nōmen, nōminis n.','noun',['name'],'nouns'),
+  vw('iter, itineris n.','noun',['journey','route'],'nouns'),
+  vw('dux, ducis m.','noun',['leader','general'],'nouns'),
+  vw('vōx, vōcis f.','noun',['voice'],'nouns'),
+  vw('manus, -ūs f.','noun',['hand','band (of men)'],'nouns'),
+  vw('exercitus, -ūs m.','noun',['army'],'nouns'),
+  vw('diēs, -ēī m.','noun',['day'],'nouns'),
+  vw('rēs, reī f.','noun',['thing','matter','affair'],'nouns'),
+  vw('spēs, speī f.','noun',['hope'],'nouns'),
+  // Adjectives
+  vw('bonus, -a, -um','adj',['good'],'adjectives'),
+  vw('malus, -a, -um','adj',['bad','evil'],'adjectives'),
+  vw('magnus, -a, -um','adj',['great','big'],'adjectives'),
+  vw('parvus, -a, -um','adj',['small'],'adjectives'),
+  vw('multus, -a, -um','adj',['much','(pl.) many'],'adjectives'),
+  vw('longus, -a, -um','adj',['long'],'adjectives'),
+  vw('novus, -a, -um','adj',['new'],'adjectives'),
+  vw('vērus, -a, -um','adj',['true'],'adjectives'),
+  vw('miser, misera, miserum','adj',['wretched','unhappy'],'adjectives'),
+  vw('līber, lībera, līberum','adj',['free'],'adjectives'),
+  vw('pulcher, pulchra, pulchrum','adj',['beautiful'],'adjectives'),
+  vw('omnis, omne','adj',['all','every'],'adjectives'),
+  vw('fortis, forte','adj',['brave','strong'],'adjectives'),
+  vw('gravis, grave','adj',['heavy','serious'],'adjectives'),
+  vw('facilis, facile','adj',['easy'],'adjectives'),
+  vw('difficilis, difficile','adj',['difficult'],'adjectives'),
+  vw('brevis, breve','adj',['short','brief'],'adjectives'),
+  vw('celer, celeris, celere','adj',['swift','quick'],'adjectives'),
+  vw('potēns, potentis','adj',['powerful'],'adjectives'),
+  vw('ingēns, ingentis','adj',['huge'],'adjectives'),
+  // Pronouns / numerals
+  vw('ego','pron',['I'],'pronouns'),
+  vw('tū','pron',['you (sg.)'],'pronouns'),
+  vw('is, ea, id','pron',['he, she, it; that'],'pronouns'),
+  vw('hic, haec, hoc','pron',['this'],'pronouns'),
+  vw('ille, illa, illud','pron',['that'],'pronouns'),
+  vw('quī, quae, quod','pron',['who, which'],'pronouns'),
+  vw('quis, quid','pron',['who?, what?'],'pronouns'),
+  vw('ipse, ipsa, ipsum','pron',['himself, herself, itself'],'pronouns'),
+  vw('sē','pron',['himself, herself, itself, themselves (reflexive)'],'pronouns'),
+  vw('nōs','pron',['we'],'pronouns'),
+  vw('ūnus, -a, -um','num',['one'],'pronouns'),
+  vw('duo, duae, duo','num',['two'],'pronouns'),
+  vw('trēs, tria','num',['three'],'pronouns'),
+  // Adverbs / prepositions / conjunctions
+  vw('nōn','adv',['not'],'particles'),
+  vw('semper','adv',['always'],'particles'),
+  vw('numquam','adv',['never'],'particles'),
+  vw('iam','adv',['now','already'],'particles'),
+  vw('tum','adv',['then'],'particles'),
+  vw('ita','adv',['thus','so'],'particles'),
+  vw('valdē','adv',['very much','greatly'],'particles'),
+  vw('bene','adv',['well'],'particles'),
+  vw('male','adv',['badly'],'particles'),
+  vw('nunc','adv',['now'],'particles'),
+  vw('ibi','adv',['there'],'particles'),
+  vw('ubi','adv',['where; when'],'particles'),
+  vw('in','prep',['in, on (+abl.); into, onto (+acc.)'],'particles'),
+  vw('ad','prep',['to, towards (+acc.)'],'particles'),
+  vw('ab / ā','prep',['from, by (+abl.)'],'particles'),
+  vw('ex / ē','prep',['out of, from (+abl.)'],'particles'),
+  vw('cum','prep',['with (+abl.)'],'particles'),
+  vw('sine','prep',['without (+abl.)'],'particles'),
+  vw('per','prep',['through (+acc.)'],'particles'),
+  vw('post','prep',['after, behind (+acc.)'],'particles'),
+  vw('ante','prep',['before, in front of (+acc.)'],'particles'),
+  vw('sub','prep',['under (+abl./acc.)'],'particles'),
+  vw('et','conj',['and'],'particles'),
+  vw('sed','conj',['but'],'particles'),
+  vw('aut','conj',['or'],'particles'),
+  vw('nam','conj',['for'],'particles'),
+  vw('quod','conj',['because'],'particles'),
+  vw('ut','conj',['as; so that, in order that'],'particles'),
+  vw('sī','conj',['if'],'particles'),
+  vw('quia','conj',['because'],'particles'),
+  vw('cum','conj',['when, since, although'],'particles'),
+  vw('postquam','conj',['after'],'particles'),
+  // Common verbs (meaning only — conjugate them in the Verb Tester)
+  vw('sum, esse','verb',['be'],'verbs'),
+  vw('possum, posse','verb',['be able, can'],'verbs'),
+  vw('amō, amāre','verb',['love'],'verbs'),
+  vw('videō, vidēre','verb',['see'],'verbs'),
+  vw('habeō, habēre','verb',['have, hold'],'verbs'),
+  vw('faciō, facere','verb',['do, make'],'verbs'),
+  vw('dīcō, dīcere','verb',['say'],'verbs'),
+  vw('veniō, venīre','verb',['come'],'verbs'),
+  vw('dūcō, dūcere','verb',['lead'],'verbs'),
+  vw('agō, agere','verb',['do, drive'],'verbs'),
+  vw('mittō, mittere','verb',['send'],'verbs'),
+  vw('capiō, capere','verb',['take, seize'],'verbs'),
+  vw('dō, dare','verb',['give'],'verbs'),
+  vw('vocō, vocāre','verb',['call'],'verbs'),
+  vw('petō, petere','verb',['seek, ask, head for'],'verbs'),
+  vw('audiō, audīre','verb',['hear'],'verbs'),
+  vw('scrībō, scrībere','verb',['write'],'verbs'),
+  vw('currō, currere','verb',['run'],'verbs'),
+  vw('timeō, timēre','verb',['fear'],'verbs'),
+  vw('putō, putāre','verb',['think'],'verbs'),
+  vw('crēdō, crēdere','verb',['believe, trust'],'verbs'),
+  vw('cognōscō, cognōscere','verb',['learn, recognize'],'verbs'),
+  vw('teneō, tenēre','verb',['hold'],'verbs'),
+  vw('gerō, gerere','verb',['carry, wage'],'verbs'),
+  vw('vincō, vincere','verb',['conquer'],'verbs'),
+  vw('relinquō, relinquere','verb',['leave, abandon'],'verbs'),
+  vw('discō, discere','verb',['learn'],'verbs'),
+  vw('doceō, docēre','verb',['teach'],'verbs'),
+  vw('regō, regere','verb',['rule'],'verbs'),
+  vw('moveō, movēre','verb',['move'],'verbs'),
+];
+const VOCAB_CATEGORIES = ['nouns','adjectives','pronouns','particles','verbs'];
+const VOCAB_CATEGORY_LABEL = {nouns:'Nouns',adjectives:'Adjectives',pronouns:'Pronouns & numerals',particles:'Adverbs, preps & conj.',verbs:'Verbs (meaning only)'};
+
+/* ============================== STATE ============================== */
+
+const PARSE_MOODS = ['indic','subj','imper'];
+
+function freshSetup(){
+  const grid = {};
+  TENSE_TILES.forEach(t=>{ grid[t] = { voices: new Set(VOICES), moods: new Set(PARSE_MOODS) }; });
+  return { grid, verbs: new Set(VERB_ORDER) };
+}
+
+function emptySetup(){
+  const grid = {};
+  TENSE_TILES.forEach(t=>{ grid[t] = { voices: new Set(), moods: new Set() }; });
+  return { grid, verbs: new Set() };
+}
+
+let state = {
+  mode: 'home',
+  setup: freshSetup(),
+  activeTab: 'setup',
+  reviewSel: {tense:'pres',voice:'act',mood:'indic',verb:'amo'},
+  parseQuestion: null,
+  parseSel: {tense:null,voice:null,mood:null},
+  parseResult: null,
+  parseAttempts: 0,
+  parseTryAgain: null,
+  typeQuestion: null,
+  typeResult: null,
+  typeAttempts: 0,
+  typeTryAgain: null,
+  score: {correct:0, attempted:0},
+  log: [],
+  helpOpen: false,
+
+  drillActiveTab: 'setup',
+  drillVerbIds: new Set(DRILL_VERBS_DEFAULT_IDS()),
+  drillHardMode: false,
+  drillQueue: [],
+  drillQuestion: null,
+  drillBlankIdx: null,
+  drillResult: null,
+  drillScore: {correct:0, attempted:0},
+  drillLog: [],
+
+  nounActiveTab: 'setup',
+  nounSetup: { cases: new Set(CASES), numbers: new Set(NUMBERS), nouns: new Set(NOUN_ORDER) },
+  nounReviewSel: { noun:'puella' },
+  nounParseQuestion: null,
+  nounParseSel: { declension:null, gender:null, cs:null, num:null },
+  nounParseResult: null,
+  nounParseAttempts: 0,
+  nounParseTryAgain: null,
+  nounTypeQuestion: null,
+  nounTypeResult: null,
+  nounTypeAttempts: 0,
+  nounTypeTryAgain: null,
+  nounScore: {correct:0, attempted:0},
+  nounLog: [],
+
+  vocabActiveTab: 'setup',
+  vocabSetup: { categories: new Set(VOCAB_CATEGORIES), direction: 'la-en', mode: 'mcq' },
+  vocabQuestion: null,
+  vocabResult: null,
+  vocabScore: {correct:0, attempted:0},
+  vocabLog: []
+};
+
+function DRILL_VERBS_DEFAULT_IDS(){ return DRILL_VERBS.map(v=>v.id); }
+
+/* ============================== PARSE / TYPE ENGINE ============================== */
+
+function flattenPersonBearingCells(verbKeys, tenses, voices, moods){
+  const pool = [];
+  verbKeys.forEach(vk=>{
+    tenses.forEach(t=>{
+      voices.forEach(vc=>{
+        moods.forEach(m=>{
+          if(m!=='indic' && m!=='subj' && m!=='imper') return;
+          if(!cellExists(vk,m,t,vc)) return;
+          if(m==='imper'){
+            imperSlots(t,vc).forEach(slot=>{
+              const variants = getCell(vk,t,vc,m)[slot];
+              if(variants) pool.push({verb:vk,tense:t,voice:vc,mood:m,personKey:slot,label:IMPER_SLOT_LABEL[slot],full:IMPER_SLOT_FULL[slot],variants});
+            });
+          } else {
+            const arr = getCell(vk,t,vc,m);
+            if(arr){
+              arr.forEach((variants,idx)=>{
+                pool.push({verb:vk,tense:t,voice:vc,mood:m,personKey:String(idx),label:PERSON_LABELS[idx],full:PERSON_FULL[idx],variants});
+              });
+            }
+          }
+        });
+      });
+    });
+  });
+  return pool;
+}
+
+function currentPool(){
+  const pool = [];
+  const verbKeys = [...state.setup.verbs];
+  verbKeys.forEach(vk=>{
+    TENSE_TILES.forEach(t=>{
+      const g = state.setup.grid[t];
+      if(!g) return;
+      pool.push(...flattenPersonBearingCells([vk], [t], [...g.voices], [...g.moods]));
+    });
+  });
+  return pool;
+}
+
+function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function acceptedAnswersFor(verbKey, surfaceForm){
+  // find every (tense,voice,mood,person) whose form matches surfaceForm for this verb, within indic/subj/imper scope
+  const n = normalize(surfaceForm);
+  const all = flattenPersonBearingCells([verbKey], TENSE_TILES, VOICES, MOODS);
+  return all.filter(c=>c.variants.some(v=>normalize(v)===n));
+}
+
+function fmtTuple(c){
+  return `${TENSE_LABEL[c.tense]} ${VOICE_LABEL[c.voice]} ${MOOD_LABEL[c.mood]} ${c.label}`;
+}
+
+function newParseQuestion(){
+  const pool = currentPool();
+  if(pool.length===0){ state.parseQuestion=null; return; }
+  const target = pickRandom(pool);
+  const word = target.variants[0];
+  state.parseQuestion = { verb:target.verb, word, target };
+  state.parseSel = {tense:null,voice:null,mood:null};
+  state.parseResult = null;
+  state.parseAttempts = 0;
+  state.parseTryAgain = null;
+}
+
+function newTypeQuestion(){
+  const pool = currentPool();
+  if(pool.length===0){ state.typeQuestion=null; return; }
+  const target = pickRandom(pool);
+  state.typeQuestion = target;
+  state.typeResult = null;
+  state.typeAttempts = 0;
+  state.typeTryAgain = null;
+}
+
+/* ============================== RENDER HELPERS ============================== */
+
+function el(html){ const d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstElementChild; }
+
+function headerHtml(title){
+  return `
+  <div class="header-row">
+    <div class="title-wrap"><h1 class="title">${title}</h1></div>
+    <div class="header-buttons">
+      <div class="chip" data-action="menu">MENU</div>
+      <div class="chip" data-action="help">HELP</div>
+    </div>
+  </div>`;
+}
+
+function tabbarHtml(tabs, activeKey, dataAttr, score){
+  return `<div class="tabbar">
+    ${tabs.map(([k,l])=>`<div class="tab ${activeKey===k?'active':''}" data-${dataAttr}="${k}">${l}</div>`).join('')}
+    <div class="score">${score.correct}/${score.attempted}</div>
+  </div>`;
+}
+
+function tileRow(items, selectedSet, dataAttr, multi){
+  return `<div class="tile-row">${items.map(({key,label})=>{
+    const sel = multi ? selectedSet.has(key) : selectedSet===key;
+    return `<div class="tile ${sel?'selected':''}" data-${dataAttr}="${key}">${label}</div>`;
+  }).join('')}</div>`;
+}
+
+/* ============================== SET-UP (conjugation) ============================== */
+
+function renderSetup(){
+  const verbItems = VERB_ORDER.map(v=>({key:v,label:VERBS[v].label}));
+
+  const rows = TENSE_TILES.map(t=>{
+    const g = state.setup.grid[t];
+    const rowFullyOn = g.voices.size===VOICES.length && g.moods.size===PARSE_MOODS.length;
+
+    const voiceCells = VOICES.map(v=>{
+      const on = g.voices.has(v);
+      return `<td><span class="grid-cell ${on?'on':''}" data-grid-voice="${t}:${v}">${VOICE_LABEL[v]}</span></td>`;
+    }).join('');
+
+    const moodCells = PARSE_MOODS.map(m=>{
+      const exists = cellExistsBase(m,t,'act') || cellExistsBase(m,t,'pass');
+      if(!exists) return `<td><span class="grid-cell na">&mdash;</span></td>`;
+      const on = g.moods.has(m);
+      return `<td><span class="grid-cell ${on?'on':''}" data-grid-mood="${t}:${m}">${MOOD_LABEL[m]}</span></td>`;
+    }).join('');
+
+    return `<tr>
+      <td class="tense-label" data-grid-tense-toggle="${t}" title="Click to toggle this whole row">${TENSE_LABEL[t]}${rowFullyOn?'':''}</td>
+      ${voiceCells}${moodCells}
+    </tr>`;
+  }).join('');
+
+  return `
+    <div class="setup-label-row">
+      <div class="prompt-text" style="margin:0;">Choose verbs and parts to test.</div>
+      <div style="display:flex;gap:8px;">
+        <div class="chip" data-action="setup-all">ALL</div>
+        <div class="chip" data-action="setup-none">NONE</div>
+      </div>
+    </div>
+    <p class="note-box" style="margin:2px 0 16px;">Voice and mood are independent per tense &mdash; e.g. tick present + passive without ticking future + passive. Click a tense's name to toggle its whole row.</p>
+    <div class="grid-wrap">
+      <table class="grid-table">
+        <tr><th>Tense</th><th>Act</th><th>Pass</th><th>Indic</th><th>Subj</th><th>Imper</th></tr>
+        ${rows}
+      </table>
+    </div>
+    <div style="margin:22px 0 4px;font-size:13px;color:var(--ink-soft);font-variant:small-caps;">Verb</div>
+    ${tileRow(verbItems, state.setup.verbs, 'setup-verb', true)}
+    <p class="note-box" style="margin-top:26px;">PARSE and TYPE draw questions only from indicative, subjunctive, and imperative forms (the forms that vary by person) &mdash; infinitives and participles can still be browsed in REVIEW regardless of this grid. Impossible tense/voice/mood combinations (e.g. future subjunctive, shown as &mdash;) can't be selected.</p>
+  `;
+}
+
+/* ============================== REVIEW ============================== */
+
+function renderReview(){
+  const sel = state.reviewSel;
+  const tenseItems = TENSE_TILES.map(t=>({key:t,label:TENSE_LABEL[t]}));
+  const voiceItems = VOICES.map(v=>({key:v,label:VOICE_LABEL[v]}));
+  const moodItems = MOODS.map(m=>({key:m,label:MOOD_LABEL[m]}));
+  const verbItems = VERB_ORDER.map(v=>({key:v,label:VERBS[v].label}));
+  let body;
+  if(!cellExists(sel.verb, sel.mood, sel.tense, sel.voice)){
+    body = `<p class="note-box">${reviewGapNote(sel)}</p>`;
+  } else {
+    body = renderParadigmTable(sel.verb, sel.tense, sel.voice, sel.mood, null, null);
+  }
+  return `
+    ${tileRow(tenseItems, sel.tense, 'review-tense', false)}
+    ${tileRow(voiceItems, sel.voice, 'review-voice', false)}
+    ${tileRow(moodItems, sel.mood, 'review-mood', false)}
+    ${tileRow(verbItems, sel.verb, 'review-verb', false)}
+    ${body}
+  `;
+}
+
+function reviewGapNote(sel){
+  if(sel.verb==='sum' && sel.voice==='pass') return 'sum has no passive forms.';
+  if(sel.mood==='subj' && ['fut','futperf'].includes(sel.tense)) return 'Latin has no future subjunctive.';
+  if(sel.mood==='imper' && ['impf','perf','plup','futperf'].includes(sel.tense)) return 'Latin has no imperfect/perfect-system imperative.';
+  if(sel.mood==='infin' && ['impf','plup','futperf'].includes(sel.tense)) return 'Latin has no imperfect/pluperfect/future-perfect infinitive.';
+  if(sel.mood==='ptcp'){
+    if(sel.tense==='pres' && sel.voice==='pass') return 'There is no present passive participle in Latin.';
+    if(sel.tense==='perf' && sel.voice==='act') return 'There is no perfect active participle for regular verbs (only deponents have one).';
+    if(['impf','plup','futperf'].includes(sel.tense)) return 'Latin participles exist only in the present, future, and perfect.';
+    if(sel.verb==='sum') return 'sum has only a future participle (futūrus).';
+  }
+  return 'That combination does not exist in Latin.';
+}
+
+function renderParadigmTable(verbKey, tense, voice, mood, clickMode, questionState){
+  // clickMode: null (review, plain display) | 'parse-placeholder' | 'parse-revealed'
+  if(mood==='infin'){
+    const variants = getCell(verbKey,tense,voice,mood);
+    if(!variants) return `<p class="note-box">No such infinitive exists.</p>`;
+    return `<table class="paradigm"><tr><td class="person">infin</td><td class="form">${variants[0]}</td></tr></table>`;
+  }
+  if(mood==='ptcp'){
+    const variants = getCell(verbKey,tense,voice,mood);
+    if(!variants) return `<p class="note-box">No such participle exists.</p>`;
+    const note = tense==='pres' ? '<p class="note-box">shown as nom. sg. masc. (participles decline like 1st/2nd or 3rd declension adjectives)</p>' : '';
+    return `<table class="paradigm"><tr><td class="person">ptcp</td><td class="form">${variants[0]}</td></tr></table>${note}`;
+  }
+  if(mood==='imper'){
+    const slots = imperSlots(tense,voice);
+    const cellObj = getCell(verbKey,tense,voice,mood) || {};
+    const rows = slots.map(slot=>{
+      const variants = cellObj[slot];
+      const label = IMPER_SLOT_LABEL[slot];
+      let cellHtml;
+      if(clickMode==='parse-placeholder'){
+        cellHtml = `<td class="form placeholder clickable" data-parse-cell="${slot}"><span class="qmark">???</span></td>`;
+      } else if(clickMode==='parse-revealed'){
+        const isChosen = questionState.chosenKey===slot;
+        const cls = isChosen ? (questionState.correct? 'right':'wrong') : '';
+        const mark = isChosen ? (questionState.correct?'<span class="mark-check">&#10003;</span>':'<span class="mark-x">&#10007;</span>') : '';
+        cellHtml = `<td class="form ${cls}">${variants?variants[0]:'&mdash;'}${mark}</td>`;
+      } else {
+        cellHtml = `<td class="form">${variants?variants[0]:'&mdash;'}</td>`;
+      }
+      return `<tr><td class="person">${label}</td>${cellHtml}</tr>`;
+    }).join('');
+    return `<table class="paradigm">${rows}</table>`;
+  }
+  // indic / subj: 6 rows
+  const arr = getCell(verbKey,tense,voice,mood);
+  const rows = PERSON_LABELS.map((label,idx)=>{
+    let cellHtml;
+    if(clickMode==='parse-placeholder'){
+      cellHtml = `<td class="form placeholder clickable" data-parse-cell="${idx}"><span class="qmark">???</span></td>`;
+    } else if(clickMode==='parse-revealed'){
+      const isChosen = questionState.chosenKey===String(idx);
+      const cls = isChosen ? (questionState.correct? 'right':'wrong') : '';
+      const mark = isChosen ? (questionState.correct?'<span class="mark-check">&#10003;</span>':'<span class="mark-x">&#10007;</span>') : '';
+      const variants = arr ? arr[idx] : null;
+      cellHtml = `<td class="form ${cls}">${variants?variants[0]:'&mdash;'}${mark}</td>`;
+    } else {
+      const variants = arr ? arr[idx] : null;
+      cellHtml = `<td class="form">${variants?variants[0]:'&mdash;'}</td>`;
+    }
+    return `<tr><td class="person">${label}</td>${cellHtml}</tr>`;
+  }).join('');
+  return `<table class="paradigm">${rows}</table>`;
+}
+
+/* ============================== PARSE ============================== */
+
+function renderParse(){
+  if(!state.parseQuestion) newParseQuestion();
+  const q = state.parseQuestion;
+  if(!q){
+    return `<p class="note-box">No verb/tense/voice/mood combination is currently selected on SET-UP. Go to SET-UP and select at least one valid combination.</p>`;
+  }
+  const sel = state.parseSel;
+  const tenseItems = TENSE_TILES.map(t=>({key:t,label:TENSE_LABEL[t]}));
+  const voiceItems = VOICES.map(v=>({key:v,label:VOICE_LABEL[v]}));
+  const moodItems = MOODS.filter(m=>m==='indic'||m==='subj'||m==='imper').map(m=>({key:m,label:MOOD_LABEL[m]}));
+
+  let tableHtml = '';
+  const allChosen = sel.tense && sel.voice && sel.mood;
+  if(allChosen){
+    if(!state.parseResult && !cellExistsBase(sel.mood, sel.tense, sel.voice)){
+      tableHtml = `<p class="note-box">No such form exists &mdash; pick a different tense/voice/mood.</p>`;
+    } else if(state.parseResult){
+      tableHtml = renderParadigmTable(q.verb, state.parseResult.tense, state.parseResult.voice, state.parseResult.mood, 'parse-revealed', state.parseResult);
+    } else if(!cellExists(q.verb, sel.mood, sel.tense, sel.voice)){
+      tableHtml = `<p class="note-box">No such form exists &mdash; pick a different tense/voice/mood.</p>`;
+    } else {
+      tableHtml = renderParadigmTable(q.verb, sel.tense, sel.voice, sel.mood, 'parse-placeholder', null);
+    }
+  }
+
+  let feedback = '';
+  if(state.parseResult){
+    const r = state.parseResult;
+    feedback = `<div class="feedback">
+      <div class="line">${fmtTuple({tense:r.tense,voice:r.voice,mood:r.mood,label:r.chosenLabel})} ${r.correct?'<span class="mark-check">&#10003;</span>':'<span class="mark-x">&#10007;</span>'}</div>
+      <div class="line">You could have chosen: ${r.acceptedList.map(fmtTuple).join(' / ')}</div>
+    </div>
+    <div class="btn-next" data-action="parse-next">NEXT</div>`;
+  } else if(state.parseTryAgain){
+    feedback = `<div class="feedback" style="color:#c0392b;">
+      <div class="line">${fmtTuple({tense:state.parseTryAgain.tense,voice:state.parseTryAgain.voice,mood:state.parseTryAgain.mood,label:state.parseTryAgain.chosenLabel})} <span class="mark-x">&#10007;</span></div>
+      <div class="line">Not quite &mdash; you have one more try.</div>
+    </div>`;
+  }
+
+  const skipBtn = state.parseResult ? '' : `<div class="chip" data-action="parse-skip" style="display:block;margin:14px auto 0;width:fit-content;">SKIP</div>`;
+
+  return `
+    <div class="promptbox">${q.word}</div>
+    <p class="prompt-text" style="text-align:center;font-size:18px;">Where would you find this Latin verb form?<br>Pick tense, voice, and mood, then a <span class="qmark">???</span> box.</p>
+    ${tileRow(tenseItems, sel.tense, 'parse-tense', false)}
+    ${tileRow(voiceItems, sel.voice, 'parse-voice', false)}
+    ${tileRow(moodItems, sel.mood, 'parse-mood', false)}
+    ${tableHtml}
+    ${skipBtn}
+    ${feedback}
+  `;
+}
+
+const MAX_ATTEMPTS = 2;
+
+function submitParseGuess(chosenKey){
+  const q = state.parseQuestion;
+  const sel = state.parseSel;
+  const accepted = acceptedAnswersFor(q.verb, q.word);
+  const isImper = sel.mood==='imper';
+  const chosenLabel = isImper ? IMPER_SLOT_LABEL[chosenKey] : PERSON_LABELS[Number(chosenKey)];
+  const correct = accepted.some(a=>a.tense===sel.tense && a.voice===sel.voice && a.mood===sel.mood && a.personKey===chosenKey);
+  state.parseAttempts++;
+
+  if(correct || state.parseAttempts>=MAX_ATTEMPTS){
+    state.parseResult = {
+      tense:sel.tense, voice:sel.voice, mood:sel.mood, chosenKey, chosenLabel, correct,
+      acceptedList: accepted
+    };
+    state.score.attempted++;
+    if(correct) state.score.correct++;
+    state.log.unshift({
+      kind:'parse', prompt:q.word,
+      chosen: fmtTuple({tense:sel.tense,voice:sel.voice,mood:sel.mood,label:chosenLabel}),
+      correct, correctAnswer: accepted.map(fmtTuple).join(' / ')
+    });
+  } else {
+    state.parseTryAgain = { tense:sel.tense, voice:sel.voice, mood:sel.mood, chosenLabel };
+  }
+}
+
+/* ============================== TYPE ============================== */
+
+function renderType(){
+  if(!state.typeQuestion) newTypeQuestion();
+  const q = state.typeQuestion;
+  if(!q){
+    return `<p class="note-box">No verb/tense/voice/mood combination is currently selected on SET-UP. Go to SET-UP and select at least one valid combination.</p>`;
+  }
+  const full = q.mood==='imper' ? q.full : PERSON_FULL[Number(q.personKey)];
+  const tryAgainNote = (state.typeTryAgain && !state.typeResult)
+    ? `<p class="feedback" style="color:#c0392b;">Not quite (you typed: ${state.typeTryAgain.chosen}) &mdash; you have one more try. <span class="mark-x">&#10007;</span></p>`
+    : '';
+  let bottom;
+  if(state.typeResult){
+    const r = state.typeResult;
+    bottom = `<p class="feedback"><span class="line">${r.correct?'Correct <span class="mark-check">&#10003;</span>':'Incorrect <span class="mark-x">&#10007;</span>'}</span>
+      <span class="line">Correct form${q.variants.length>1?'s':''}: ${q.variants.join(' / ')}</span></p>
+      <div class="btn-next" data-action="type-next">NEXT</div>`;
+  } else {
+    bottom = `<div style="display:flex;gap:10px;justify-content:center;margin-top:22px;">
+      <div class="chip" data-action="type-submit" style="padding:10px 26px;font-size:15px;">CHECK</div>
+      <div class="chip" data-action="type-skip" style="padding:10px 26px;font-size:15px;">SKIP</div>
+    </div>`;
+  }
+  return `
+    <p class="prompt-text" style="text-align:center;">Type this form of <span class="verb-pill">${VERBS[q.verb].label}</span></p>
+    <p class="type-hint">${TENSE_FULL[q.tense]} ${VOICE_FULL[q.voice]} ${MOOD_FULL[q.mood]}</p>
+    <p class="type-hint">${full}</p>
+    <div class="type-inputs">
+      <input id="type-box1" type="text" ${state.typeResult?'disabled':''} autocomplete="off" spellcheck="false">
+      <input id="type-box2" type="text" ${state.typeResult?'disabled':''} autocomplete="off" spellcheck="false">
+    </div>
+    <div class="keybox">
+      <strong>Macrons:</strong> you don't need to type them &mdash; <em>amabam</em> and <em>am&#257;bam</em> are both accepted. Long vowels are shown in the answer key as &#257; &#275; &#299; &#333; &#363;.
+    </div>
+    ${tryAgainNote}
+    ${bottom}
+  `;
+}
+
+function submitTypeGuess(){
+  const q = state.typeQuestion;
+  const b1 = document.getElementById('type-box1')?.value || '';
+  const b2 = document.getElementById('type-box2')?.value || '';
+  const correct = matchAnswer(b1,q.variants) || matchAnswer(b2,q.variants);
+  state.typeAttempts++;
+
+  if(correct || state.typeAttempts>=MAX_ATTEMPTS){
+    state.typeResult = { correct };
+    state.score.attempted++;
+    if(correct) state.score.correct++;
+    const promptLabel = `${VERBS[q.verb].label} ${TENSE_LABEL[q.tense]} ${VOICE_LABEL[q.voice]} ${MOOD_LABEL[q.mood]} ${q.label}`;
+    state.log.unshift({
+      kind:'type', prompt:promptLabel,
+      chosen: [b1,b2].filter(Boolean).join(' / ') || '(blank)',
+      correct, correctAnswer: q.variants.join(' / ')
+    });
+  } else {
+    state.typeTryAgain = { chosen: [b1,b2].filter(Boolean).join(' / ') || '(blank)' };
+  }
+}
+
+/* ============================== RESULTS ============================== */
+
+function renderResults(){
+  if(state.log.length===0){
+    return `<p class="prompt-text">Your results so far (${state.score.correct}/${state.score.attempted})</p><p class="note-box">No attempts yet &mdash; try PARSE or TYPE.</p>`;
+  }
+  return `<p class="prompt-text">Your results so far (${state.score.correct}/${state.score.attempted})</p>
+  ${state.log.map(e=>`
+    <div class="results-entry">
+      <div class="results-prompt">${e.prompt}</div>
+      <div class="results-line">You chose: ${e.chosen} ${e.correct?'<span class="mark-check">&#10003;</span>':'<span class="mark-x">&#10007;</span>'}</div>
+      ${(!e.correct)?`<div class="results-line">Possible: ${e.correctAnswer}</div>`:''}
+    </div>
+  `).join('')}`;
+}
+
+/* ============================== HELP / MENU ============================== */
+
+function helpContent(){
+  if(state.mode==='conjugation'){
+    return `
+    <h2>How this works</h2>
+    <p><strong>SET-UP</strong> &mdash; a grid lets you pick voice and mood independently for each tense: tick present + passive without also ticking future + passive, for instance. Click a tense's name to toggle its whole row. Choose verbs separately below. Nothing here navigates by itself.</p>
+    <p><strong>REVIEW</strong> &mdash; browse the full paradigm for one tense/voice/mood/verb combination (independent of the SET-UP grid). Combinations that don't exist in Latin (e.g. future subjunctive) show a short note instead of a table.</p>
+    <p><strong>PARSE</strong> &mdash; you're shown a real Latin form and have to say where it comes from: pick tense, voice, mood, then click the person/number cell you think it is. You get two attempts before the answer is revealed.</p>
+    <p><strong>TYPE</strong> &mdash; you're given a verb + tense/voice/mood/person and have to type the form (two attempts, same as PARSE). Two boxes are provided because some cells legitimately have two correct spellings (e.g. <em>am&#257;v&#275;runt</em> / <em>am&#257;v&#275;re</em>) &mdash; either box, either answer, counts.</p>
+    <p><strong>Macrons are optional to type</strong> but always shown in answer keys. SKIP moves to a new question without affecting your score.</p>
+    <p>PARSE and TYPE only quiz indicative, subjunctive, and imperative forms (the ones that vary by person). Infinitives and participles can still be explored in REVIEW.</p>
+    <p><strong>sum</strong> has no passive voice at all. Its present participle doesn't exist either (only compounds of <em>sum</em> have one) &mdash; only its future participle <em>fut&#363;rus</em> does.</p>
+    <p>Note: the SET-UP verb row labels the 3rd/4th-conjugation verbs by their 1st principal part (<strong>mitt&#333;</strong>, <strong>audi&#333;</strong>) rather than their present infinitive, for consistency with am&#333;/mone&#333;/fugi&#333;.</p>
+    `;
+  } else if(state.mode==='drill'){
+    return `
+    <h2>Principal Parts Drill</h2>
+    <p>Pick which of the 100 verbs are in scope on SET-UP, then DRILL quizzes you on their principal parts.</p>
+    <p>Default mode: you're shown the meaning and whichever principal parts exist for that verb <em>except</em> one, chosen at random each time &mdash; you fill in the missing one. Toggle to "meaning only" for a harder version that asks for all four parts from scratch.</p>
+    <p>Defective verbs (<em>inquam, coep&#299;, memin&#299;</em>) only ever have their existing parts shown or asked for.</p>
+    <p>Macrons are optional to type and grading is not case-sensitive, exactly as in the Conjugation Tester.</p>
+    <p style="font-size:12px;color:var(--ink-soft);">List compiled by cross-referencing the Dickinson College Commentaries <em>Latin Core Vocabulary</em> frequency list against the core-verb sets used in Wheelock's Latin and the Cambridge Latin Course &mdash; a curated "most pedagogically important 100," not a strict frequency-rank cut.</p>
+    `;
+  } else if(state.mode==='nouns'){
+    return `
+    <h2>Noun Declension Tester</h2>
+    <p>Same shape as the verb tester: <strong>SET-UP</strong> picks which cases, numbers, and nouns are in scope; <strong>REVIEW</strong> browses a full case/number paradigm for one noun; <strong>PARSE</strong> shows a real noun form and asks you to identify its declension, gender, case, and number; <strong>TYPE</strong> gives you a noun + case + number and asks you to write the form.</p>
+    <p>Genuinely ambiguous forms (e.g. <em>puellae</em>, which could be genitive singular, dative singular, nominative plural, or vocative plural) accept any of their valid readings, exactly like the verb tester's PARSE screen.</p>
+    <p>Covers one or two nouns per declension (1st&ndash;5th) plus the irregulars <strong>v&#299;s, v&#299;s</strong> f. (force/strength), <strong>deus, de&#299;</strong> m. (god, with its irregular plural d&#299;/de&#333;rum/d&#299;s), and <strong>b&#333;s, bovis</strong> m./f. (ox/cow, with plural d&#333;bus/b&#333;bus alternates).</p>
+    <p>Macrons are optional to type; you get two attempts before the answer is revealed, same as the verb tester.</p>
+    `;
+  } else {
+    return `
+    <h2>Vocabulary Tester</h2>
+    <p><strong>SET-UP</strong> &mdash; choose word categories and quiz direction (Latin&rarr;English or English&rarr;Latin), and whether you want multiple-choice or typed answers.</p>
+    <p><strong>QUIZ</strong> &mdash; multiple-choice shows four options, one correct; typed mode accepts any one of a word's listed meanings, case-insensitive and macron-optional.</p>
+    <p>The list is a curated core vocabulary (not a strict frequency cut) spanning nouns, adjectives, common verbs (meaning only &mdash; conjugate them in the Verb Tester), adverbs, prepositions, conjunctions, and pronouns, at roughly a GCSE/A-Level Latin level.</p>
+    `;
+  }
+}
+
+/* ============================== DRILL MODE ============================== */
+
+function renderDrillSetup(){
+  const groups = {};
+  DRILL_VERBS.forEach(v=>{ (groups[v.group] = groups[v.group]||[]).push(v); });
+  const groupOrder = ['1st conjugation','2nd conjugation','3rd conjugation','3rd conjugation, -iō','4th conjugation','Irregular / defective'];
+  let html = `<div class="setup-label-row">
+      <div class="prompt-text" style="margin:0;">Choose verbs to drill.</div>
+      <div style="display:flex;gap:8px;">
+        <div class="chip" data-action="drill-all">ALL</div>
+        <div class="chip" data-action="drill-none">NONE</div>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <label class="toggle-opt"><input type="radio" name="drillmode" ${!state.drillHardMode?'checked':''} data-action="drill-mode-easy"> Fill in the missing part (default)</label>
+      <label class="toggle-opt"><input type="radio" name="drillmode" ${state.drillHardMode?'checked':''} data-action="drill-mode-hard"> Meaning only, type all 4 (harder)</label>
+    </div>
+    <div class="drill-grid">`;
+  groupOrder.forEach(g=>{
+    if(!groups[g]) return;
+    html += `<div class="drill-group-label">${g}</div>`;
+    groups[g].forEach(v=>{
+      const sel = state.drillVerbIds.has(v.id);
+      html += `<div class="drill-tile ${sel?'selected':''}" data-drillverb="${v.id}">${v.parts[0]}${v.defective?' *':''}</div>`;
+    });
+  });
+  html += `</div><p class="note-box" style="font-size:12px;">* defective verb &mdash; only its existing principal parts are drilled.</p>`;
+  return html;
+}
+
+function pickNextDrillVerb(){
+  const scope = DRILL_VERBS.filter(v=>state.drillVerbIds.has(v.id));
+  if(scope.length===0) return null;
+  if(state.drillQueue.length===0){
+    state.drillQueue = [...scope].sort(()=>Math.random()-0.5).map(v=>v.id);
+  }
+  const id = state.drillQueue.shift();
+  return DRILL_VERBS.find(v=>v.id===id);
+}
+
+const PART_LABELS = ['1st','2nd','3rd','4th'];
+
+function newDrillQuestion(){
+  const v = pickNextDrillVerb();
+  state.drillQuestion = v;
+  state.drillResult = null;
+  if(v && !state.drillHardMode){
+    const existingIdx = [0,1,2,3].filter(i=>v.parts[i]!==null);
+    state.drillBlankIdx = pickRandom(existingIdx);
+  } else {
+    state.drillBlankIdx = null;
+  }
+}
+
+function renderDrill(){
+  if(!state.drillQuestion) newDrillQuestion();
+  const v = state.drillQuestion;
+  if(!v){
+    return `<p class="note-box">No verbs selected. Go to SET-UP and choose at least one verb.</p>`;
+  }
+  const existing = v.parts.map(p=>p!==null);
+
+  if(state.drillHardMode){
+    const fieldsToShow = [0,1,2,3].filter(i=>existing[i]);
+    const top = `<p class="drill-meaning">${v.meaning}</p>`;
+    let fields = `<div class="drill-fields">`;
+    fieldsToShow.forEach(i=>{
+      let cls = '';
+      if(state.drillResult) cls = state.drillResult.fieldCorrect[i] ? 'right' : 'wrong';
+      fields += `<div class="drill-field ${cls}">
+        <label>${PART_LABELS[i]} part</label>
+        <input id="drill-field-${i}" type="text" ${state.drillResult?'disabled':''} autocomplete="off" spellcheck="false">
+      </div>`;
+    });
+    fields += `</div>`;
+    let bottom;
+    if(state.drillResult){
+      const r = state.drillResult;
+      const correctParts = fieldsToShow.map(i=>`${PART_LABELS[i]}: ${Array.isArray(v.parts[i])?v.parts[i].join(' / '):v.parts[i]}`).join(', ');
+      bottom = `<p class="feedback"><span class="line">${r.allCorrect?'All correct <span class="mark-check">&#10003;</span>':'Some incorrect <span class="mark-x">&#10007;</span>'}</span>
+        <span class="line">Correct: ${correctParts}</span></p>
+        <div class="btn-next" data-action="drill-next">NEXT</div>`;
+    } else {
+      bottom = `<div class="btn-next" data-action="drill-submit">CHECK</div>`;
+    }
+    return `${top}${fields}${bottom}`;
+  }
+
+  // Default mode: random blank among the parts that exist for this verb.
+  const blankIdx = state.drillBlankIdx;
+  const givenIdx = [0,1,2,3].filter(i=>existing[i] && i!==blankIdx);
+  const givenText = givenIdx.map(i=>`<b>${PART_LABELS[i]}:</b> ${Array.isArray(v.parts[i])?v.parts[i].join(' / '):v.parts[i]}`).join('&nbsp;&nbsp;&nbsp;');
+
+  const top = `<p class="drill-meaning">${v.meaning}</p><p class="drill-given">${givenText}</p>`;
+
+  let cls = '';
+  if(state.drillResult) cls = state.drillResult.fieldCorrect[blankIdx] ? 'right' : 'wrong';
+  const fields = `<div class="drill-fields">
+    <div class="drill-field ${cls}">
+      <label>${PART_LABELS[blankIdx]} part</label>
+      <input id="drill-field-${blankIdx}" type="text" ${state.drillResult?'disabled':''} autocomplete="off" spellcheck="false">
+    </div>
+  </div>`;
+
+  let bottom;
+  if(state.drillResult){
+    const r = state.drillResult;
+    const correctAnswer = Array.isArray(v.parts[blankIdx]) ? v.parts[blankIdx].join(' / ') : v.parts[blankIdx];
+    bottom = `<p class="feedback"><span class="line">${r.allCorrect?'Correct <span class="mark-check">&#10003;</span>':'Incorrect <span class="mark-x">&#10007;</span>'}</span>
+      <span class="line">${PART_LABELS[blankIdx]} part: ${correctAnswer}</span></p>
+      <div class="btn-next" data-action="drill-next">NEXT</div>`;
+  } else {
+    bottom = `<div class="btn-next" data-action="drill-submit">CHECK</div>`;
+  }
+  return `${top}${fields}${bottom}`;
+}
+
+function submitDrillGuess(){
+  const v = state.drillQuestion;
+  const existing = v.parts.map(p=>p!==null);
+  const fieldsToShow = state.drillHardMode ? [0,1,2,3].filter(i=>existing[i]) : [state.drillBlankIdx];
+  const fieldCorrect = {};
+  let allCorrect = true;
+  const userVals = {};
+  fieldsToShow.forEach(i=>{
+    const val = document.getElementById('drill-field-'+i)?.value || '';
+    userVals[i]=val;
+    const accepted = Array.isArray(v.parts[i]) ? v.parts[i] : [v.parts[i]];
+    const ok = matchAnswer(val, accepted);
+    fieldCorrect[i]=ok;
+    if(!ok) allCorrect=false;
+  });
+  state.drillResult = { fieldCorrect, allCorrect };
+  state.drillScore.attempted++;
+  if(allCorrect) state.drillScore.correct++;
+  const chosen = fieldsToShow.map(i=>`${PART_LABELS[i]}: ${userVals[i]||'(blank)'}`).join(', ');
+  const correctAnswer = fieldsToShow.map(i=>`${PART_LABELS[i]}: ${Array.isArray(v.parts[i])?v.parts[i].join(' / '):v.parts[i]}`).join(', ');
+  state.drillLog.unshift({
+    prompt: `${v.parts[0]} &mdash; ${v.meaning}`,
+    chosen, correct: allCorrect, correctAnswer
+  });
+}
+
+function renderDrillResults(){
+  if(state.drillLog.length===0){
+    return `<p class="prompt-text">Your results so far (${state.drillScore.correct}/${state.drillScore.attempted})</p><p class="note-box">No attempts yet.</p>`;
+  }
+  return `<p class="prompt-text">Your results so far (${state.drillScore.correct}/${state.drillScore.attempted})</p>
+  ${state.drillLog.map(e=>`
+    <div class="results-entry">
+      <div class="results-prompt">${e.prompt}</div>
+      <div class="results-line">You chose: ${e.chosen} ${e.correct?'<span class="mark-check">&#10003;</span>':'<span class="mark-x">&#10007;</span>'}</div>
+      ${(!e.correct)?`<div class="results-line">Correct: ${e.correctAnswer}</div>`:''}
+    </div>
+  `).join('')}`;
+}
+
+/* ============================== NOUN TESTER ============================== */
+
+function ordinal(n){ return {1:'1st',2:'2nd',3:'3rd',4:'4th',5:'5th'}[n] || (n+'th'); }
+
+function invalidateNounQuestions(){
+  state.nounParseQuestion = null; state.nounParseResult = null;
+  state.nounParseSel = { declension:null, gender:null, cs:null, num:null };
+  state.nounParseAttempts = 0; state.nounParseTryAgain = null;
+  state.nounTypeQuestion = null; state.nounTypeResult = null;
+  state.nounTypeAttempts = 0; state.nounTypeTryAgain = null;
+}
+
+function nounFlatten(nounKeys, cases, numbers){
+  const pool = [];
+  nounKeys.forEach(nk=>{
+    numbers.forEach(num=>{
+      cases.forEach(cs=>{
+        const variants = getNounCell(nk,cs,num);
+        if(variants) pool.push({noun:nk, cs, num, variants});
+      });
+    });
+  });
+  return pool;
+}
+
+function nounCurrentPool(){
+  return nounFlatten([...state.nounSetup.nouns], [...state.nounSetup.cases], [...state.nounSetup.numbers]);
+}
+
+function nounAcceptedAnswers(nounKey, surfaceForm){
+  const n = normalize(surfaceForm);
+  const all = nounFlatten([nounKey], CASES, NUMBERS);
+  return all.filter(c=>c.variants.some(v=>normalize(v)===n));
+}
+
+function newNounParseQuestion(){
+  const pool = nounCurrentPool();
+  if(pool.length===0){ state.nounParseQuestion=null; return; }
+  const target = pickRandom(pool);
+  const word = target.variants[0];
+  state.nounParseQuestion = { noun:target.noun, word, target };
+  state.nounParseSel = { declension:null, gender:null, cs:null, num:null };
+  state.nounParseResult = null;
+  state.nounParseAttempts = 0;
+  state.nounParseTryAgain = null;
+}
+
+function newNounTypeQuestion(){
+  const pool = nounCurrentPool();
+  if(pool.length===0){ state.nounTypeQuestion=null; return; }
+  const target = pickRandom(pool);
+  state.nounTypeQuestion = target;
+  state.nounTypeResult = null;
+  state.nounTypeAttempts = 0;
+  state.nounTypeTryAgain = null;
+}
+
+function renderNounSetup(){
+  const caseItems = CASES.map(c=>({key:c,label:CASE_LABEL[c]}));
+  const numberItems = NUMBERS.map(nn=>({key:nn,label:NUMBER_LABEL[nn]}));
+  const nounItems = NOUN_ORDER.map(nk=>({key:nk,label:NOUNS[nk].label}));
+  return `
+    <div class="setup-label-row">
+      <div class="prompt-text" style="margin:0;">Choose cases, numbers, and nouns to test.</div>
+      <div style="display:flex;gap:8px;">
+        <div class="chip" data-action="noun-setup-all">ALL</div>
+        <div class="chip" data-action="noun-setup-none">NONE</div>
+      </div>
+    </div>
+    <div style="margin:6px 0 4px;font-size:13px;color:var(--ink-soft);font-variant:small-caps;">Case</div>
+    ${tileRow(caseItems, state.nounSetup.cases, 'noun-setup-case', true)}
+    <div style="margin:6px 0 4px;font-size:13px;color:var(--ink-soft);font-variant:small-caps;">Number</div>
+    ${tileRow(numberItems, state.nounSetup.numbers, 'noun-setup-number', true)}
+    <div style="margin:6px 0 4px;font-size:13px;color:var(--ink-soft);font-variant:small-caps;">Noun</div>
+    ${tileRow(nounItems, state.nounSetup.nouns, 'noun-setup-noun', true)}
+    <p class="note-box" style="margin-top:26px;">Every case exists in every number for every noun here, so there's no gap table to worry about &mdash; tick whatever combination you want to drill.</p>
+  `;
+}
+
+function renderNounReview(){
+  const sel = state.nounReviewSel;
+  const nounItems = NOUN_ORDER.map(nk=>({key:nk,label:NOUNS[nk].label}));
+  const noun = NOUNS[sel.noun];
+  const rows = CASES.map(cs=>{
+    const sgForm = noun.forms.sg[cs][0];
+    const plForm = noun.forms.pl[cs][0];
+    return `<tr><td class="person">${CASE_LABEL[cs]}</td><td class="form">${sgForm}</td><td class="form">${plForm}</td></tr>`;
+  }).join('');
+  const genderStr = noun.genders.map(g=>GENDER_LABEL[g]).join('/');
+  return `
+    ${tileRow(nounItems, sel.noun, 'noun-review-noun', false)}
+    <p class="prompt-text" style="text-align:center;font-size:17px;">${noun.label}, ${noun.gen} &mdash; ${genderStr}. &mdash; ${ordinal(noun.declension)} declension${noun.irregular?' (irregular)':''} &mdash; "${noun.meaning}"</p>
+    <table class="paradigm">
+      <tr><td class="person"></td><td class="person">sg</td><td class="person">pl</td></tr>
+      ${rows}
+    </table>
+  `;
+}
+
+function renderNounParse(){
+  if(!state.nounParseQuestion) newNounParseQuestion();
+  const q = state.nounParseQuestion;
+  if(!q) return `<p class="note-box">No case/number/noun combination is selected on SET-UP. Go to SET-UP and select at least one.</p>`;
+  const sel = state.nounParseSel;
+  const declItems = [1,2,3,4,5].map(d=>({key:String(d),label:ordinal(d)}));
+  const genderItems = ['m','f','n'].map(g=>({key:g,label:GENDER_LABEL[g]}));
+  const caseItems = CASES.map(c=>({key:c,label:CASE_LABEL[c]}));
+  const numberItems = NUMBERS.map(nn=>({key:nn,label:NUMBER_LABEL[nn]}));
+
+  let feedback = '';
+  if(state.nounParseResult){
+    const r = state.nounParseResult;
+    feedback = `<div class="feedback">
+      <div class="line">${ordinal(Number(r.declension))} decl, ${GENDER_LABEL[r.gender]||'?'}, ${CASE_LABEL[r.cs]} ${NUMBER_LABEL[r.num]} ${r.correct?'<span class="mark-check">&#10003;</span>':'<span class="mark-x">&#10007;</span>'}</div>
+      <div class="line">Correct: ${ordinal(r.correctDeclension)} decl, ${r.correctGenders.map(g=>GENDER_LABEL[g]).join('/')}, ${r.acceptedList.map(a=>CASE_LABEL[a.cs]+' '+NUMBER_LABEL[a.num]).join(' / ')}</div>
+    </div>
+    <div class="btn-next" data-action="noun-parse-next">NEXT</div>`;
+  } else if(state.nounParseTryAgain){
+    feedback = `<div class="feedback" style="color:#c0392b;"><div class="line">Not quite &mdash; you have one more try. <span class="mark-x">&#10007;</span></div></div>`;
+  }
+
+  const skipBtn = state.nounParseResult ? '' : `<div class="chip" data-action="noun-parse-skip" style="display:block;margin:14px auto 0;width:fit-content;">SKIP</div>`;
+  const canCheck = sel.declension && sel.gender && sel.cs && sel.num;
+  const checkBtn = (!state.nounParseResult) ? `<div class="btn-next" data-action="noun-parse-check" style="${canCheck?'':'opacity:.4;pointer-events:none;'}">CHECK</div>` : '';
+
+  return `
+    <div class="promptbox">${q.word}</div>
+    <p class="prompt-text" style="text-align:center;font-size:18px;">What declension, gender, case, and number is this noun form?</p>
+    <div style="margin:6px 0 4px;font-size:13px;color:var(--ink-soft);font-variant:small-caps;">Declension</div>
+    ${tileRow(declItems, sel.declension, 'noun-parse-decl', false)}
+    <div style="margin:6px 0 4px;font-size:13px;color:var(--ink-soft);font-variant:small-caps;">Gender</div>
+    ${tileRow(genderItems, sel.gender, 'noun-parse-gender', false)}
+    <div style="margin:6px 0 4px;font-size:13px;color:var(--ink-soft);font-variant:small-caps;">Case</div>
+    ${tileRow(caseItems, sel.cs, 'noun-parse-case', false)}
+    <div style="margin:6px 0 4px;font-size:13px;color:var(--ink-soft);font-variant:small-caps;">Number</div>
+    ${tileRow(numberItems, sel.num, 'noun-parse-number', false)}
+    ${checkBtn}
+    ${skipBtn}
+    ${feedback}
+  `;
+}
+
+function submitNounParseGuess(){
+  const q = state.nounParseQuestion;
+  const sel = state.nounParseSel;
+  const noun = NOUNS[q.noun];
+  const accepted = nounAcceptedAnswers(q.noun, q.word);
+  const correct = Number(sel.declension)===noun.declension && noun.genders.includes(sel.gender) && accepted.some(a=>a.cs===sel.cs && a.num===sel.num);
+  state.nounParseAttempts++;
+
+  if(correct || state.nounParseAttempts>=MAX_ATTEMPTS){
+    state.nounParseResult = {
+      declension:sel.declension, gender:sel.gender, cs:sel.cs, num:sel.num, correct,
+      acceptedList: accepted, correctDeclension: noun.declension, correctGenders: noun.genders
+    };
+    state.nounScore.attempted++;
+    if(correct) state.nounScore.correct++;
+    state.nounLog.unshift({
+      kind:'parse', prompt:q.word,
+      chosen: `${ordinal(Number(sel.declension))} decl, ${GENDER_LABEL[sel.gender]||'?'}, ${CASE_LABEL[sel.cs]} ${NUMBER_LABEL[sel.num]}`,
+      correct,
+      correctAnswer: `${ordinal(noun.declension)} decl, ${noun.genders.map(g=>GENDER_LABEL[g]).join('/')}, ${accepted.map(a=>CASE_LABEL[a.cs]+' '+NUMBER_LABEL[a.num]).join(' / ')}`
+    });
+  } else {
+    state.nounParseTryAgain = { declension:sel.declension, gender:sel.gender, cs:sel.cs, num:sel.num };
+  }
+}
+
+function renderNounType(){
+  if(!state.nounTypeQuestion) newNounTypeQuestion();
+  const q = state.nounTypeQuestion;
+  if(!q) return `<p class="note-box">No case/number/noun combination is selected on SET-UP. Go to SET-UP and select at least one.</p>`;
+  const noun = NOUNS[q.noun];
+  const tryAgainNote = (state.nounTypeTryAgain && !state.nounTypeResult)
+    ? `<p class="feedback" style="color:#c0392b;">Not quite &mdash; you have one more try. <span class="mark-x">&#10007;</span></p>` : '';
+  let bottom;
+  if(state.nounTypeResult){
+    const r = state.nounTypeResult;
+    bottom = `<p class="feedback"><span class="line">${r.correct?'Correct <span class="mark-check">&#10003;</span>':'Incorrect <span class="mark-x">&#10007;</span>'}</span>
+      <span class="line">Correct form${q.variants.length>1?'s':''}: ${q.variants.join(' / ')}</span></p>
+      <div class="btn-next" data-action="noun-type-next">NEXT</div>`;
+  } else {
+    bottom = `<div style="display:flex;gap:10px;justify-content:center;margin-top:22px;">
+      <div class="chip" data-action="noun-type-submit" style="padding:10px 26px;font-size:15px;">CHECK</div>
+      <div class="chip" data-action="noun-type-skip" style="padding:10px 26px;font-size:15px;">SKIP</div>
+    </div>`;
+  }
+  const genderStr = noun.genders.map(g=>GENDER_LABEL[g]).join('/');
+  return `
+    <p class="prompt-text" style="text-align:center;">Type this form of <span class="verb-pill">${noun.label}, ${noun.gen}</span> (${genderStr}.)</p>
+    <p class="type-hint">${CASE_FULL[q.cs]} ${NUMBER_FULL[q.num]}</p>
+    <div class="type-inputs">
+      <input id="noun-type-box1" type="text" ${state.nounTypeResult?'disabled':''} autocomplete="off" spellcheck="false">
+      <input id="noun-type-box2" type="text" ${state.nounTypeResult?'disabled':''} autocomplete="off" spellcheck="false">
+    </div>
+    <div class="keybox"><strong>Macrons:</strong> optional to type, exactly as in the Verb Conjugation Tester.</div>
+    ${tryAgainNote}
+    ${bottom}
+  `;
+}
+
+function submitNounTypeGuess(){
+  const q = state.nounTypeQuestion;
+  const b1 = document.getElementById('noun-type-box1')?.value || '';
+  const b2 = document.getElementById('noun-type-box2')?.value || '';
+  const correct = matchAnswer(b1,q.variants) || matchAnswer(b2,q.variants);
+  state.nounTypeAttempts++;
+
+  if(correct || state.nounTypeAttempts>=MAX_ATTEMPTS){
+    state.nounTypeResult = { correct };
+    state.nounScore.attempted++;
+    if(correct) state.nounScore.correct++;
+    const promptLabel = `${NOUNS[q.noun].label} ${CASE_LABEL[q.cs]} ${NUMBER_LABEL[q.num]}`;
+    state.nounLog.unshift({
+      kind:'type', prompt:promptLabel,
+      chosen: [b1,b2].filter(Boolean).join(' / ') || '(blank)',
+      correct, correctAnswer: q.variants.join(' / ')
+    });
+  } else {
+    state.nounTypeTryAgain = true;
+  }
+}
+
+function renderNounResults(){
+  if(state.nounLog.length===0){
+    return `<p class="prompt-text">Your results so far (${state.nounScore.correct}/${state.nounScore.attempted})</p><p class="note-box">No attempts yet &mdash; try PARSE or TYPE.</p>`;
+  }
+  return `<p class="prompt-text">Your results so far (${state.nounScore.correct}/${state.nounScore.attempted})</p>
+  ${state.nounLog.map(e=>`
+    <div class="results-entry">
+      <div class="results-prompt">${e.prompt}</div>
+      <div class="results-line">You chose: ${e.chosen} ${e.correct?'<span class="mark-check">&#10003;</span>':'<span class="mark-x">&#10007;</span>'}</div>
+      ${(!e.correct)?`<div class="results-line">Possible: ${e.correctAnswer}</div>`:''}
+    </div>
+  `).join('')}`;
+}
+
+/* ============================== VOCAB TESTER ============================== */
+
+function vocabHeadword(latinField){ return latinField.split(',')[0].trim(); }
+
+function vocabPool(){ return VOCAB.filter(w=>state.vocabSetup.categories.has(w.category)); }
+
+function newVocabQuestion(){
+  const pool = vocabPool();
+  if(pool.length===0){ state.vocabQuestion=null; return; }
+  const word = pickRandom(pool);
+  let direction = state.vocabSetup.direction;
+  if(direction==='both') direction = Math.random()<0.5 ? 'la-en' : 'en-la';
+  let mcqOptions = null;
+  if(state.vocabSetup.mode==='mcq'){
+    const distractorSource = pool.length>=4 ? pool : VOCAB;
+    const others = distractorSource.filter(w=>w.latin!==word.latin);
+    const shuffled = [...others].sort(()=>Math.random()-0.5);
+    const distractors = shuffled.slice(0,3);
+    const optionWords = [word, ...distractors].sort(()=>Math.random()-0.5);
+    mcqOptions = optionWords.map(w=> direction==='la-en' ? w.meanings[0] : w.latin);
+  }
+  state.vocabQuestion = { word, direction, mcqOptions };
+  state.vocabResult = null;
+}
+
+function finalizeVocabAnswer(correct, userAnswerText){
+  const q = state.vocabQuestion;
+  state.vocabResult = { correct };
+  state.vocabScore.attempted++;
+  if(correct) state.vocabScore.correct++;
+  const promptLabel = q.direction==='la-en' ? q.word.latin : q.word.meanings.join(' / ');
+  const correctAnswer = q.direction==='la-en' ? q.word.meanings.join(' / ') : q.word.latin;
+  state.vocabLog.unshift({ prompt: promptLabel, chosen: userAnswerText || '(blank)', correct, correctAnswer });
+}
+
+function submitVocabMCQ(optionText){
+  const q = state.vocabQuestion;
+  const correctText = q.direction==='la-en' ? q.word.meanings[0] : q.word.latin;
+  finalizeVocabAnswer(optionText===correctText, optionText);
+}
+
+function submitVocabType(){
+  const q = state.vocabQuestion;
+  const val = document.getElementById('vocab-type-box')?.value || '';
+  const correct = q.direction==='la-en' ? matchAnswer(val, q.word.meanings) : matchAnswer(val, [vocabHeadword(q.word.latin)]);
+  finalizeVocabAnswer(correct, val);
+}
+
+function renderVocabSetup(){
+  const catItems = VOCAB_CATEGORIES.map(c=>({key:c,label:VOCAB_CATEGORY_LABEL[c]}));
+  return `
+    <div class="setup-label-row">
+      <div class="prompt-text" style="margin:0;">Choose word categories.</div>
+      <div style="display:flex;gap:8px;">
+        <div class="chip" data-action="vocab-setup-all">ALL</div>
+        <div class="chip" data-action="vocab-setup-none">NONE</div>
+      </div>
+    </div>
+    ${tileRow(catItems, state.vocabSetup.categories, 'vocab-setup-cat', true)}
+    <div style="margin:20px 0 4px;font-size:13px;color:var(--ink-soft);font-variant:small-caps;">Direction</div>
+    <div class="tile-row">
+      <div class="tile ${state.vocabSetup.direction==='la-en'?'selected':''}" data-vocab-setup-dir="la-en">Latin &rarr; English</div>
+      <div class="tile ${state.vocabSetup.direction==='en-la'?'selected':''}" data-vocab-setup-dir="en-la">English &rarr; Latin</div>
+      <div class="tile ${state.vocabSetup.direction==='both'?'selected':''}" data-vocab-setup-dir="both">Both (random)</div>
+    </div>
+    <div style="margin:20px 0 4px;font-size:13px;color:var(--ink-soft);font-variant:small-caps;">Answer mode</div>
+    <div class="tile-row">
+      <div class="tile ${state.vocabSetup.mode==='mcq'?'selected':''}" data-vocab-setup-mode="mcq">Multiple choice</div>
+      <div class="tile ${state.vocabSetup.mode==='type'?'selected':''}" data-vocab-setup-mode="type">Type the answer</div>
+    </div>
+    <p class="note-box" style="margin-top:26px;">${VOCAB.length} words across ${VOCAB_CATEGORIES.length} categories. In typed mode, any one of a word's listed meanings counts as correct, and English&rarr;Latin only needs the headword (not the full declension/conjugation citation).</p>
+  `;
+}
+
+function renderVocabQuiz(){
+  if(!state.vocabQuestion) newVocabQuestion();
+  const q = state.vocabQuestion;
+  if(!q) return `<p class="note-box">No word categories selected. Go to SET-UP and choose at least one.</p>`;
+  const promptText = q.direction==='la-en' ? q.word.latin : q.word.meanings.join(' / ');
+  const promptLabelText = q.direction==='la-en' ? 'What does this mean?' : 'What is the Latin word?';
+
+  let body;
+  if(state.vocabResult){
+    const r = state.vocabResult;
+    const correctAnswer = q.direction==='la-en' ? q.word.meanings.join(' / ') : q.word.latin;
+    body = `<p class="feedback"><span class="line">${r.correct?'Correct <span class="mark-check">&#10003;</span>':'Incorrect <span class="mark-x">&#10007;</span>'}</span>
+      <span class="line">Answer: ${correctAnswer}</span></p>
+      <div class="btn-next" data-action="vocab-next">NEXT</div>`;
+  } else if(state.vocabSetup.mode==='mcq'){
+    body = `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:18px;">
+      ${q.mcqOptions.map(opt=>`<div class="tile" style="width:100%;max-width:420px;text-align:center;" data-vocab-mcq="${encodeURIComponent(opt)}">${opt}</div>`).join('')}
+    </div>`;
+  } else {
+    body = `<div class="type-inputs"><input id="vocab-type-box" type="text" autocomplete="off" spellcheck="false" style="width:340px;"></div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:14px;">
+        <div class="chip" data-action="vocab-type-submit">CHECK</div>
+      </div>`;
+  }
+
+  return `
+    <div class="promptbox" style="font-size:22px;">${promptText}</div>
+    <p class="prompt-text" style="text-align:center;font-size:17px;">${promptLabelText}</p>
+    ${body}
+  `;
+}
+
+function renderVocabResults(){
+  if(state.vocabLog.length===0){
+    return `<p class="prompt-text">Your results so far (${state.vocabScore.correct}/${state.vocabScore.attempted})</p><p class="note-box">No attempts yet.</p>`;
+  }
+  return `<p class="prompt-text">Your results so far (${state.vocabScore.correct}/${state.vocabScore.attempted})</p>
+  ${state.vocabLog.map(e=>`
+    <div class="results-entry">
+      <div class="results-prompt">${e.prompt}</div>
+      <div class="results-line">You chose: ${e.chosen} ${e.correct?'<span class="mark-check">&#10003;</span>':'<span class="mark-x">&#10007;</span>'}</div>
+      ${(!e.correct)?`<div class="results-line">Answer: ${e.correctAnswer}</div>`:''}
+    </div>
+  `).join('')}`;
+}
+
+/* ============================== MAIN RENDER ============================== */
+
+function renderHome(){
+  return `
+    <div class="header-row">
+      <div class="title-wrap"><h1 class="title">Studia Latina</h1></div>
+    </div>
+    <p class="home-intro">Pick a trainer.</p>
+    <div class="home-grid">
+      <div class="home-card" data-goto-mode="conjugation">
+        <h3>Verb Conjugation Tester</h3>
+        <p>Explore, parse, and type verb forms across tense, voice, and mood for six core verbs (am&#333;, mone&#333;, mitt&#333;, audi&#333;, fugi&#333;, sum).</p>
+      </div>
+      <div class="home-card" data-goto-mode="drill">
+        <h3>Principal Parts Drill</h3>
+        <p>Fill in the missing principal part for 100 of the most important Latin verbs.</p>
+      </div>
+      <div class="home-card" data-goto-mode="nouns">
+        <h3>Noun Declension Tester</h3>
+        <p>Parse and type noun forms across all five declensions, plus the irregulars v&#299;s, deus, and b&#333;s.</p>
+      </div>
+      <div class="home-card" data-goto-mode="vocab">
+        <h3>Vocabulary Tester</h3>
+        <p>Multiple-choice or typed practice on a curated core Latin vocabulary list.</p>
+      </div>
+    </div>
+  `;
+}
+
+function render(){
+  document.body.setAttribute('data-mode', state.mode);
+  const app = document.getElementById('app');
+  let inner = '';
+  if(state.mode==='home'){
+    inner += renderHome();
+  } else if(state.mode==='conjugation'){
+    inner += headerHtml('Latin verb tester');
+    inner += tabbarHtml([['setup','SET-UP'],['review','REVIEW'],['parse','PARSE'],['type','TYPE'],['results','RESULTS']], state.activeTab, 'tab', state.score);
+    if(state.activeTab==='setup') inner += renderSetup();
+    else if(state.activeTab==='review') inner += renderReview();
+    else if(state.activeTab==='parse') inner += renderParse();
+    else if(state.activeTab==='type') inner += renderType();
+    else if(state.activeTab==='results') inner += renderResults();
+  } else if(state.mode==='drill'){
+    inner += headerHtml('Latin principal parts drill');
+    inner += tabbarHtml([['setup','SET-UP'],['drill','DRILL'],['results','RESULTS']], state.drillActiveTab, 'drilltab', state.drillScore);
+    if(state.drillActiveTab==='setup') inner += renderDrillSetup();
+    else if(state.drillActiveTab==='drill') inner += renderDrill();
+    else if(state.drillActiveTab==='results') inner += renderDrillResults();
+  } else if(state.mode==='nouns'){
+    inner += headerHtml('Latin noun tester');
+    inner += tabbarHtml([['setup','SET-UP'],['review','REVIEW'],['parse','PARSE'],['type','TYPE'],['results','RESULTS']], state.nounActiveTab, 'nountab', state.nounScore);
+    if(state.nounActiveTab==='setup') inner += renderNounSetup();
+    else if(state.nounActiveTab==='review') inner += renderNounReview();
+    else if(state.nounActiveTab==='parse') inner += renderNounParse();
+    else if(state.nounActiveTab==='type') inner += renderNounType();
+    else if(state.nounActiveTab==='results') inner += renderNounResults();
+  } else if(state.mode==='vocab'){
+    inner += headerHtml('Latin vocabulary tester');
+    inner += tabbarHtml([['setup','SET-UP'],['quiz','QUIZ'],['results','RESULTS']], state.vocabActiveTab, 'vocabtab', state.vocabScore);
+    if(state.vocabActiveTab==='setup') inner += renderVocabSetup();
+    else if(state.vocabActiveTab==='quiz') inner += renderVocabQuiz();
+    else if(state.vocabActiveTab==='results') inner += renderVocabResults();
+  }
+  app.innerHTML = inner;
+
+  if(state.helpOpen){
+    const backdrop = el(`<div class="modal-backdrop"><div class="modal">
+      <span class="chip close-btn" data-action="help-close">CLOSE</span>
+      ${helpContent()}
+    </div></div>`);
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', e=>{ if(e.target===backdrop){ state.helpOpen=false; render(); } });
+  }
+}
+
+/* ============================== EVENTS ============================== */
+
+document.addEventListener('click', e=>{
+  const t = e.target;
+
+  if(t.dataset.action==='menu'){ state.mode='home'; render(); return; }
+  const cardEl = t.closest && t.closest('[data-goto-mode]');
+  if(cardEl){ state.mode = cardEl.dataset.gotoMode; render(); return; }
+  if(t.dataset.action==='help'){ state.helpOpen=true; render(); return; }
+  if(t.dataset.action==='help-close'){ state.helpOpen=false; render(); return; }
+
+  if(t.dataset.tab){ state.activeTab = t.dataset.tab; render(); return; }
+  if(t.dataset.drilltab){ state.drillActiveTab = t.dataset.drilltab; render(); return; }
+  if(t.dataset.nountab){ state.nounActiveTab = t.dataset.nountab; render(); return; }
+  if(t.dataset.vocabtab){ state.vocabActiveTab = t.dataset.vocabtab; render(); return; }
+
+  // SET-UP toggles
+  if(t.dataset.gridVoice){
+    const [tense,voice] = t.dataset.gridVoice.split(':');
+    toggleSet(state.setup.grid[tense].voices, voice);
+    invalidateQuestions(); render(); return;
+  }
+  if(t.dataset.gridMood){
+    const [tense,mood] = t.dataset.gridMood.split(':');
+    toggleSet(state.setup.grid[tense].moods, mood);
+    invalidateQuestions(); render(); return;
+  }
+  if(t.dataset.gridTenseToggle){
+    const tense = t.dataset.gridTenseToggle;
+    const g = state.setup.grid[tense];
+    const fullyOn = g.voices.size===VOICES.length && g.moods.size===PARSE_MOODS.length;
+    if(fullyOn){ g.voices = new Set(); g.moods = new Set(); }
+    else { g.voices = new Set(VOICES); g.moods = new Set(PARSE_MOODS); }
+    invalidateQuestions(); render(); return;
+  }
+  if(t.dataset.setupVerb){ toggleSet(state.setup.verbs, t.dataset.setupVerb); invalidateQuestions(); render(); return; }
+  if(t.dataset.action==='setup-all'){ state.setup=freshSetup(); invalidateQuestions(); render(); return; }
+  if(t.dataset.action==='setup-none'){ state.setup=emptySetup(); invalidateQuestions(); render(); return; }
+
+  // REVIEW single-select
+  if(t.dataset.reviewTense){ state.reviewSel.tense=t.dataset.reviewTense; render(); return; }
+  if(t.dataset.reviewVoice){ state.reviewSel.voice=t.dataset.reviewVoice; render(); return; }
+  if(t.dataset.reviewMood){ state.reviewSel.mood=t.dataset.reviewMood; render(); return; }
+  if(t.dataset.reviewVerb){ state.reviewSel.verb=t.dataset.reviewVerb; render(); return; }
+
+  // PARSE
+  if(t.dataset.parseTense){ if(!state.parseResult){ state.parseSel.tense=t.dataset.parseTense; render(); } return; }
+  if(t.dataset.parseVoice){ if(!state.parseResult){ state.parseSel.voice=t.dataset.parseVoice; render(); } return; }
+  if(t.dataset.parseMood){ if(!state.parseResult){ state.parseSel.mood=t.dataset.parseMood; render(); } return; }
+  if(t.dataset.parseCell !== undefined){ if(!state.parseResult){ submitParseGuess(t.dataset.parseCell); render(); } return; }
+  if(t.dataset.action==='parse-next'){ newParseQuestion(); render(); return; }
+  if(t.dataset.action==='parse-skip'){ newParseQuestion(); render(); return; }
+
+  // TYPE
+  if(t.dataset.action==='type-submit'){ submitTypeGuess(); render(); return; }
+  if(t.dataset.action==='type-next'){ newTypeQuestion(); render(); return; }
+  if(t.dataset.action==='type-skip'){ newTypeQuestion(); render(); return; }
+
+  // DRILL
+  if(t.dataset.drillverb){ toggleSet(state.drillVerbIds, t.dataset.drillverb); render(); return; }
+  if(t.dataset.action==='drill-all'){ state.drillVerbIds=new Set(DRILL_VERBS_DEFAULT_IDS()); render(); return; }
+  if(t.dataset.action==='drill-none'){ state.drillVerbIds=new Set(); render(); return; }
+  if(t.dataset.action==='drill-mode-easy'){ state.drillHardMode=false; state.drillQueue=[]; state.drillQuestion=null; render(); return; }
+  if(t.dataset.action==='drill-mode-hard'){ state.drillHardMode=true; state.drillQueue=[]; state.drillQuestion=null; render(); return; }
+  if(t.dataset.action==='drill-submit'){ submitDrillGuess(); render(); return; }
+  if(t.dataset.action==='drill-next'){ newDrillQuestion(); render(); return; }
+
+  // NOUN SET-UP
+  if(t.dataset.nounSetupCase){ toggleSet(state.nounSetup.cases, t.dataset.nounSetupCase); invalidateNounQuestions(); render(); return; }
+  if(t.dataset.nounSetupNumber){ toggleSet(state.nounSetup.numbers, t.dataset.nounSetupNumber); invalidateNounQuestions(); render(); return; }
+  if(t.dataset.nounSetupNoun){ toggleSet(state.nounSetup.nouns, t.dataset.nounSetupNoun); invalidateNounQuestions(); render(); return; }
+  if(t.dataset.action==='noun-setup-all'){
+    state.nounSetup = { cases:new Set(CASES), numbers:new Set(NUMBERS), nouns:new Set(NOUN_ORDER) };
+    invalidateNounQuestions(); render(); return;
+  }
+  if(t.dataset.action==='noun-setup-none'){
+    state.nounSetup = { cases:new Set(), numbers:new Set(), nouns:new Set() };
+    invalidateNounQuestions(); render(); return;
+  }
+
+  // NOUN REVIEW
+  if(t.dataset.nounReviewNoun){ state.nounReviewSel.noun = t.dataset.nounReviewNoun; render(); return; }
+
+  // NOUN PARSE
+  if(t.dataset.nounParseDecl){ if(!state.nounParseResult){ state.nounParseSel.declension=t.dataset.nounParseDecl; render(); } return; }
+  if(t.dataset.nounParseGender){ if(!state.nounParseResult){ state.nounParseSel.gender=t.dataset.nounParseGender; render(); } return; }
+  if(t.dataset.nounParseCase){ if(!state.nounParseResult){ state.nounParseSel.cs=t.dataset.nounParseCase; render(); } return; }
+  if(t.dataset.nounParseNumber){ if(!state.nounParseResult){ state.nounParseSel.num=t.dataset.nounParseNumber; render(); } return; }
+  if(t.dataset.action==='noun-parse-check'){
+    const sel = state.nounParseSel;
+    if(!state.nounParseResult && sel.declension && sel.gender && sel.cs && sel.num){ submitNounParseGuess(); render(); }
+    return;
+  }
+  if(t.dataset.action==='noun-parse-next'){ newNounParseQuestion(); render(); return; }
+  if(t.dataset.action==='noun-parse-skip'){ newNounParseQuestion(); render(); return; }
+
+  // NOUN TYPE
+  if(t.dataset.action==='noun-type-submit'){ submitNounTypeGuess(); render(); return; }
+  if(t.dataset.action==='noun-type-next'){ newNounTypeQuestion(); render(); return; }
+  if(t.dataset.action==='noun-type-skip'){ newNounTypeQuestion(); render(); return; }
+
+  // VOCAB SET-UP
+  if(t.dataset.vocabSetupCat){ toggleSet(state.vocabSetup.categories, t.dataset.vocabSetupCat); state.vocabQuestion=null; render(); return; }
+  if(t.dataset.vocabSetupDir){ state.vocabSetup.direction=t.dataset.vocabSetupDir; state.vocabQuestion=null; render(); return; }
+  if(t.dataset.vocabSetupMode){ state.vocabSetup.mode=t.dataset.vocabSetupMode; state.vocabQuestion=null; render(); return; }
+  if(t.dataset.action==='vocab-setup-all'){ state.vocabSetup.categories=new Set(VOCAB_CATEGORIES); state.vocabQuestion=null; render(); return; }
+  if(t.dataset.action==='vocab-setup-none'){ state.vocabSetup.categories=new Set(); state.vocabQuestion=null; render(); return; }
+
+  // VOCAB QUIZ
+  if(t.dataset.vocabMcq !== undefined){ if(!state.vocabResult){ submitVocabMCQ(decodeURIComponent(t.dataset.vocabMcq)); render(); } return; }
+  if(t.dataset.action==='vocab-type-submit'){ submitVocabType(); render(); return; }
+  if(t.dataset.action==='vocab-next'){ newVocabQuestion(); render(); return; }
+});
+
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Enter') return;
+  if(state.mode==='conjugation' && state.activeTab==='type' && !state.typeResult && state.typeQuestion){
+    submitTypeGuess(); render();
+  } else if(state.mode==='conjugation' && state.activeTab==='type' && state.typeResult){
+    newTypeQuestion(); render();
+  } else if(state.mode==='drill' && state.drillActiveTab==='drill' && !state.drillResult && state.drillQuestion){
+    submitDrillGuess(); render();
+  } else if(state.mode==='drill' && state.drillActiveTab==='drill' && state.drillResult){
+    newDrillQuestion(); render();
+  } else if(state.mode==='nouns' && state.nounActiveTab==='type' && !state.nounTypeResult && state.nounTypeQuestion){
+    submitNounTypeGuess(); render();
+  } else if(state.mode==='nouns' && state.nounActiveTab==='type' && state.nounTypeResult){
+    newNounTypeQuestion(); render();
+  } else if(state.mode==='vocab' && state.vocabActiveTab==='quiz' && state.vocabSetup.mode==='type' && !state.vocabResult && state.vocabQuestion){
+    submitVocabType(); render();
+  } else if(state.mode==='vocab' && state.vocabActiveTab==='quiz' && state.vocabResult){
+    newVocabQuestion(); render();
+  }
+});
+
+function toggleSet(set, key){ if(set.has(key)) set.delete(key); else set.add(key); }
+
+function invalidateQuestions(){
+  state.parseQuestion = null;
+  state.parseResult = null;
+  state.parseSel = {tense:null,voice:null,mood:null};
+  state.typeQuestion = null;
+  state.typeResult = null;
+}
+
+/* ============================== INIT ============================== */
+render();
+</script>
+</body>
+</html>
