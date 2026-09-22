@@ -1215,7 +1215,8 @@ function submitTypeGuess(){
   const q = state.typeQuestion;
   const b1 = document.getElementById('type-box1')?.value || '';
   const b2 = document.getElementById('type-box2')?.value || '';
-  const correct = matchAnswer(b1,q.variants) || matchAnswer(b2,q.variants);
+  const combined = `${b1} ${b2}`.trim();
+  const correct = matchAnswer(b1,q.variants) || matchAnswer(b2,q.variants) || matchAnswer(combined,q.variants);
   state.typeAttempts++;
 
   if(correct || state.typeAttempts>=MAX_ATTEMPTS){
@@ -1930,7 +1931,8 @@ document.addEventListener('click', e=>{
   if(t.dataset.parseTense){ if(!state.parseResult){ state.parseSel.tense=t.dataset.parseTense; render(); } return; }
   if(t.dataset.parseVoice){ if(!state.parseResult){ state.parseSel.voice=t.dataset.parseVoice; render(); } return; }
   if(t.dataset.parseMood){ if(!state.parseResult){ state.parseSel.mood=t.dataset.parseMood; render(); } return; }
-  if(t.dataset.parseCell !== undefined){ if(!state.parseResult){ submitParseGuess(t.dataset.parseCell); render(); } return; }
+  const parseCellEl = t.closest && t.closest('[data-parse-cell]');
+  if(parseCellEl){ if(!state.parseResult){ submitParseGuess(parseCellEl.dataset.parseCell); render(); } return; }
   if(t.dataset.action==='parse-next'){ newParseQuestion(); render(); return; }
   if(t.dataset.action==='parse-skip'){ newParseQuestion(); render(); return; }
 
