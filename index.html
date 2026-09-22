@@ -1201,7 +1201,7 @@ function renderType(){
     <p class="type-hint">${full}</p>
     <div class="type-inputs">
       <input id="type-box1" type="text" ${state.typeResult?'disabled':''} autocomplete="off" spellcheck="false">
-      <input id="type-box2" type="text" ${state.typeResult?'disabled':''} autocomplete="off" spellcheck="false">
+      ${q.variants.some(v=>v.trim().includes(' ')) ? `<input id="type-box2" type="text" ${state.typeResult?'disabled':''} autocomplete="off" spellcheck="false">` : ''}
     </div>
     <div class="keybox">
       <strong>Macrons:</strong> you don't need to type them &mdash; <em>amabam</em> and <em>am&#257;bam</em> are both accepted. Long vowels are shown in the answer key as &#257; &#275; &#299; &#333; &#363;.
